@@ -43,7 +43,13 @@ class CollectionAdmin(admin.ModelAdmin):
 
     list_display = [
         'name',
-        'product_count'
+        'parent_count',
+        'subcollection_count',
+        'product_count',
+    ]
+
+    list_filter = [
+        'parents',
     ]
 
     search_fields = [
@@ -84,9 +90,8 @@ class ProductAdmin(admin.ModelAdmin):
             'tags',
         ]}),
         ('Pricing', {'fields': [
-            'price',
-            'compare',
-            'cost',
+            'wholesale',
+            'retail',
         ]}),
         ('Inventory & Shipping', {'fields': [
             'quantity',
@@ -95,15 +100,18 @@ class ProductAdmin(admin.ModelAdmin):
         ("Status", {'fields': [
             'status',
         ]}),
-        ("Attriutes", {'fields': [
-            'attriutes',
+        ("Attributes", {'fields': [
+            'order_code',
+            'attributes',
         ]}),
     ]
 
     list_display = [
         'sku',
         'title',
-        'price',
+        'wholesale',
+        'retail',
+        'order_code',
         'status'
     ]
 
@@ -120,7 +128,7 @@ class ProductAdmin(admin.ModelAdmin):
         'handle',
         'description',
         'barcode',
-        'attriutes',
+        'attributes',
     ]
 
 
@@ -131,12 +139,12 @@ class ImageAdmin(admin.ModelAdmin):
     ]
 
     fields = [
-        'url',
+        'path',
         'product',
     ]
 
     list_display = [
-        'url',
+        'path',
         'product',
     ]
 
@@ -146,5 +154,5 @@ class ImageAdmin(admin.ModelAdmin):
     ]
 
     search_fields = [
-        'url',
+        'path',
     ]
