@@ -5,7 +5,7 @@ def toText(text):
     if text:
         text = re.sub(r'[^\x20-\x7E]+', '', str(text))
         text = re.sub(r'\s+', ' ', text)
-        return text
+        return text.strip()
     else:
         return ""
 

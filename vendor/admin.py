@@ -39,6 +39,7 @@ class TypeAdmin(admin.ModelAdmin):
 class CollectionAdmin(admin.ModelAdmin):
     fields = [
         'name',
+        'parents',
     ]
 
     list_display = [
@@ -75,6 +76,14 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    class ImageInline(admin.StackedInline):
+        model = Image
+        extra = 0
+
+        fields = [
+            'path',
+        ]
+
     fieldsets = [
         ('Primary', {'fields': [
             'sku',
@@ -130,6 +139,8 @@ class ProductAdmin(admin.ModelAdmin):
         'barcode',
         'attributes',
     ]
+
+    inlines = [ImageInline]
 
 
 @admin.register(Image)

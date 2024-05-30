@@ -97,6 +97,10 @@ class Processor:
         )
 
         Product.objects.all().delete()
+        Collection.objects.all().delete()
+        Type.objects.all().delete()
+        Tag.objects.all().delete()
+        Vendor.objects.all().delete()
 
         for row in rows:
             print(row['sku'])
@@ -123,8 +127,8 @@ class Processor:
             collections = common.toText(row['collections']).split(",")
             for collectionText in collections:
                 if ">" in collectionText:
-                    parent = collectionText.split('>')[0]
-                    name = collectionText.split('>')[1]
+                    parent = common.toText(collectionText.split('>')[0])
+                    name = common.toText(collectionText.split('>')[1])
 
                     collection, _ = Collection.objects.get_or_create(name=name)
                     parentCollection, _ = Collection.objects.get_or_create(
@@ -133,7 +137,7 @@ class Processor:
                     collection.parents.add(parentCollection)
                 else:
                     collection, _ = Collection.objects.get_or_create(
-                        name=collectionText)
+                        name=common.toText(collectionText))
 
                 product.collections.add(collection)
 

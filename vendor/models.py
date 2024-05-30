@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Count, Q
 
 
 class Vendor(models.Model):
@@ -33,7 +34,8 @@ class Collection(models.Model):
         return self.subcollections.count()
 
     def product_count(self):
-        return self.products.count()
+        products = Product.objects.filter(Q(collections=self) | Q(collections__parents=self))
+        return products.distinct().count()
 
     def __str__(self):
         return self.name
