@@ -34,7 +34,8 @@ class Collection(models.Model):
         return self.subcollections.count()
 
     def product_count(self):
-        products = Product.objects.filter(Q(collections=self) | Q(collections__parents=self))
+        products = Product.objects.filter(
+            Q(collections=self) | Q(collections__parents=self))
         return products.distinct().count()
 
     def __str__(self):
@@ -83,9 +84,49 @@ class Product(models.Model):
     status = models.BooleanField(default=True)
 
     # Attributes
+    parent_sku = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    category = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    length = models.FloatField(default=1, null=True, blank=True)
+    height = models.FloatField(default=1, null=True, blank=True)
+    country = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
     order_code = models.CharField(
         max_length=200, default=None, blank=True, null=True)
-    attributes = models.JSONField(default=dict, blank=True, null=True)
+    dimensions = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    era = models.CharField(max_length=200, default=None, blank=True, null=True)
+    circulation = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    metal = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    misc_product_info = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    obverse_detail = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    region = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    reverse_detail = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    ruler = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    size = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    subcategory = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    custom_date = models.DateField(default=None, blank=True, null=True)
+    news_from_date = models.DateField(default=None, blank=True, null=True)
+    news_to_date = models.DateField(default=None, blank=True, null=True)
+    product_attachment_file = models.CharField(
+        max_length=2000, default=None, blank=True, null=True)
+    msrp = models.FloatField(default=1, null=True, blank=True)
+    additional_attributes = models.JSONField(
+        default=dict, blank=True, null=True)
+
+    # Shopify
+    product_id = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
 
     def __str__(self):
         return self.title

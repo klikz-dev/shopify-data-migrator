@@ -1,7 +1,8 @@
 import re
+from datetime import datetime
 
 
-def toText(text):
+def to_text(text):
     if text:
         text = re.sub(r'[^\x20-\x7E]+', '', str(text))
         text = re.sub(r'\s+', ' ', text)
@@ -10,10 +11,10 @@ def toText(text):
         return ""
 
 
-def toFloat(value):
+def to_float(value):
     if value:
         try:
-            value = round(float(toText(value)), 2)
+            value = round(float(to_text(value)), 2)
         except:
             value = 0
     else:
@@ -25,11 +26,20 @@ def toFloat(value):
         return value
 
 
-def toInt(value):
-    return int(toFloat(value))
+def to_int(value):
+    return int(to_float(value))
 
 
-def toHandle(text):
+def to_date(value):
+    try:
+        date = datetime.strptime(
+            value, "%m/%d/%Y").date() if value else None
+        return date
+    except:
+        return None
+
+
+def to_handle(text):
     if text:
         handle = str(text).lower().replace(" ", "-")
         handle = re.sub(r'[^a-z0-9-]', '', handle)

@@ -32,7 +32,7 @@ def readExcel(file_path: str, column_map: dict, exclude: dict, header_id=1):
 
         # Detect and add attributes not explicitly mapped
         attributes = {header[idx]: col for idx, col in enumerate(row)
-                      if col and header[idx] not in column_map.values() and header[idx] not in exclude}
+                      if col and header[idx] not in column_map.values() and header[idx].strip() not in exclude}
         row_data['attributes'] = attributes
 
         data.append(row_data)
