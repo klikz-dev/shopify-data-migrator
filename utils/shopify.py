@@ -1,5 +1,6 @@
 import os
 import base64
+import json
 from shopify import Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel
 
 from utils import common
@@ -60,6 +61,33 @@ class Processor:
                 "value": getattr(product, metafield_key)
             }
             metafields.append(metafield)
+
+        # Set Part
+        setparts = []
+        for setpart in product.setparts.all():
+            setparts.append({
+                'sku': setpart.sku,
+                'order_code': setpart.order_code,
+                'title': setpart.title,
+                'metal': setpart.metal,
+                'diameter': setpart.diameter,
+                'circulation': setpart.circulation,
+                'assoc': setpart.assoc,
+                'price': setpart.price,
+                'obverse_detail': setpart.obverse_detail,
+                'reverse_detail': setpart.reverse_detail,
+                'country': setpart.country,
+                'unit_weight': setpart.unit_weight,
+            })
+
+        setpart_metafield = {
+            "namespace": "custom",
+            "key": 'setparts',
+            "value": json.dumps(setparts),
+        }
+        metafields.append(setpart_metafield)
+        # Set Part
+
         return metafields
 
     def generate_product_tags(self, product):
@@ -196,6 +224,12 @@ def update_product(product, thread=None):
             shopify_metafield.namespace = metafield['namespace']
             shopify_metafield.key = metafield['key']
             shopify_metafield.value = metafield['value']
+
+            if metafield['key'] == "setparts":
+                shopify_metafield.type_type = 'json_string'
+
+            shopify_metafield.save()
+
             shopify_product.add_metafield(shopify_metafield)
 
         return shopify_product

@@ -43,7 +43,7 @@ class Processor:
                     product.handle = shopify_product.handle
                     product.save()
 
-                    self.image(product)
+                    # self.image(product)
 
                     print(
                         f"Product {product.handle} has been updated successfully.")
