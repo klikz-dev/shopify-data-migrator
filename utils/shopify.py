@@ -1,5 +1,6 @@
 import os
-from shopify import Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel
+import base64
+from shopify import Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel
 
 from utils import common
 
@@ -79,7 +80,6 @@ class Processor:
 
         vendor = product.vendor.name
         product_type = product.type.name
-        metafields = self.generate_product_metafields(product=product)
         product_tags = self.generate_product_tags(product=product)
 
         product_data = {
@@ -89,7 +89,6 @@ class Processor:
             "vendor": vendor,
             "product_type": product_type,
             "tags": product_tags,
-            'metafields': metafields,
         }
 
         return product_data
@@ -146,6 +145,7 @@ def create_product(product, thread=None):
 
     product_data = processor.generate_product_data(product=product)
     variant_data = processor.generate_variant_data(product=product)
+    metafields = processor.generate_product_metafields(product=product)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
@@ -160,6 +160,13 @@ def create_product(product, thread=None):
 
         shopify_product.save()
 
+        for metafield in metafields:
+            shopify_metafield = ShopifyMetafield()
+            shopify_metafield.namespace = metafield['namespace']
+            shopify_metafield.key = metafield['key']
+            shopify_metafield.value = metafield['value']
+            shopify_product.add_metafield(shopify_metafield)
+
         return shopify_product
 
 
@@ -169,6 +176,7 @@ def update_product(product, thread=None):
 
     product_data = processor.generate_product_data(product=product)
     variant_data = processor.generate_variant_data(product=product)
+    metafields = processor.generate_product_metafields(product=product)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
@@ -182,6 +190,13 @@ def update_product(product, thread=None):
         shopify_product.variants = [shopify_variant]
 
         shopify_product.save()
+
+        for metafield in metafields:
+            shopify_metafield = ShopifyMetafield()
+            shopify_metafield.namespace = metafield['namespace']
+            shopify_metafield.key = metafield['key']
+            shopify_metafield.value = metafield['value']
+            shopify_product.add_metafield(shopify_metafield)
 
         return shopify_product
 
@@ -198,25 +213,27 @@ def delete_product(id, thread=None):
         return success
 
 
-def upload_image(product_id, variant_id, position, src, alt, thread=None):
+def upload_image(product_id, image, alt, thread=None):
 
     processor = Processor(thread=thread)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        image_obj = {
-            'product_id': product_id,
-            'position': position,
-            'src': src,
-            'alt': alt,
-        }
-        if position % 10 == 1:
-            image_obj['variant_ids'] = [variant_id]
+        with open(image, "rb") as image_file:
+            encoded_string = base64.b64encode(
+                image_file.read()).decode('utf-8')
 
-        shopify_image = ShopifyImage(image_obj)
-        shopify_image.save()
+            image_obj = {
+                'product_id': product_id,
+                'attachment': encoded_string,
+                'filename': os.path.basename(image),
+                'alt': alt,
+            }
 
-        return shopify_image
+            shopify_image = ShopifyImage(image_obj)
+            shopify_image.save()
+
+            return shopify_image
 
 
 def delete_image(product_id, image_id, thread=None):

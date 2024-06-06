@@ -6,7 +6,6 @@ from utils import shopify
 from vendor.models import Product
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
-IMAGEDIR = f"{Path(__file__).resolve().parent.parent}/files/images"
 
 
 class Command(BaseCommand):
@@ -43,6 +42,9 @@ class Processor:
                 if shopify_product.handle:
                     product.handle = shopify_product.handle
                     product.save()
+
+                    self.image(product)
+
                     print(
                         f"Product {product.handle} has been updated successfully.")
                 else:
@@ -57,6 +59,9 @@ class Processor:
                     product.product_id = shopify_product.id
                     product.handle = shopify_product.handle
                     product.save()
+
+                    self.image(product)
+
                     print(
                         f"Product {shopify_product.id} has been created successfully.")
                 else:
@@ -65,3 +70,14 @@ class Processor:
 
         for index, product in enumerate(products):
             sync_product(index, product)
+
+    def image(self, product):
+        images = product.images.all()
+        for image in images:
+            try:
+                shopify_image = shopify.upload_image(product_id=product.product_id,
+                                                     image=f"{FILEDIR}/{image.path}", alt=product.title)
+
+                print(shopify_image)
+            except:
+                continue

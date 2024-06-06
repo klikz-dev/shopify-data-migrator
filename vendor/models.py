@@ -139,3 +139,33 @@ class Image(models.Model):
 
     def __str__(self):
         return self.product.sku
+
+
+class Setpart(models.Model):
+    sku = models.CharField(max_length=200, primary_key=True)
+    product = models.ForeignKey(
+        Product, related_name="setparts", on_delete=models.CASCADE, blank=False, null=False)
+
+    order_code = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    title = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    metal = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    diameter = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    circulation = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    assoc = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    price = models.FloatField(default=1, null=True, blank=True)
+    obverse_detail = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    reverse_detail = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    country = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    unit_weight = models.FloatField(default=1, null=True, blank=True)
+
+    def __str__(self):
+        return self.product.sku

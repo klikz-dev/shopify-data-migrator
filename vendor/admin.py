@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Vendor, Type, Collection, Tag, Product, Image
+from .models import Vendor, Type, Collection, Tag, Product, Image, Setpart
 
 
 @admin.register(Vendor)
@@ -213,4 +213,45 @@ class ImageAdmin(admin.ModelAdmin):
 
     search_fields = [
         'path',
+    ]
+
+
+@admin.register(Setpart)
+class SetpartAdmin(admin.ModelAdmin):
+    autocomplete_fields = [
+        'product',
+    ]
+
+    fields = [
+        'sku',
+        'product',
+        'order_code',
+        'title',
+        'metal',
+        'diameter',
+        'circulation',
+        'assoc',
+        'price',
+        'obverse_detail',
+        'reverse_detail',
+        'country',
+        'unit_weight',
+    ]
+
+    list_display = [
+        'sku',
+        'product',
+        'order_code',
+        'title',
+    ]
+
+    list_filter = [
+        'product__type__name',
+        'product__collections__name',
+    ]
+
+    search_fields = [
+        'sku',
+        'order_code',
+        'title',
     ]
