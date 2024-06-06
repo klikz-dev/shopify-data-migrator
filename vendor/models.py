@@ -52,6 +52,35 @@ class Tag(models.Model):
         return self.name
 
 
+class Setpart(models.Model):
+    sku = models.CharField(max_length=200, primary_key=True)
+
+    order_code = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    title = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+
+    metal = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    diameter = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    circulation = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    assoc = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    price = models.FloatField(default=1, null=True, blank=True)
+    obverse_detail = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    reverse_detail = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    country = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    unit_weight = models.FloatField(default=1, null=True, blank=True)
+
+    def __str__(self):
+        return self.title
+
+
 class Product(models.Model):
     # Primary
     sku = models.CharField(max_length=200, primary_key=True)
@@ -124,6 +153,10 @@ class Product(models.Model):
     additional_attributes = models.JSONField(
         default=dict, blank=True, null=True)
 
+    # Set Parts
+    setparts = models.ManyToManyField(
+        Setpart, related_name="products", blank=False)
+
     # Shopify
     product_id = models.CharField(
         max_length=200, default=None, blank=True, null=True)
@@ -136,36 +169,6 @@ class Image(models.Model):
     path = models.URLField(max_length=1000, blank=False, null=False)
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE, blank=False, null=False)
-
-    def __str__(self):
-        return self.product.sku
-
-
-class Setpart(models.Model):
-    sku = models.CharField(max_length=200, primary_key=True)
-    product = models.ForeignKey(
-        Product, related_name="setparts", on_delete=models.CASCADE, blank=False, null=False)
-
-    order_code = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    title = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    metal = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    diameter = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    circulation = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    assoc = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    price = models.FloatField(default=1, null=True, blank=True)
-    obverse_detail = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    reverse_detail = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    country = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    unit_weight = models.FloatField(default=1, null=True, blank=True)
 
     def __str__(self):
         return self.product.sku

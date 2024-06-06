@@ -6,7 +6,7 @@ import re
 
 from utils import common, feed
 
-from vendor.models import Product, Vendor, Type, Collection, Tag, Image
+from vendor.models import Product, Vendor, Type, Collection, Tag, Image, Setpart
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
 IMAGEDIR = f"{Path(__file__).resolve().parent.parent}/files/images"
@@ -24,6 +24,9 @@ class Command(BaseCommand):
         if "product" in options['functions']:
             processor.product()
 
+        if "setpart" in options['functions']:
+            processor.setpart()
+
 
 class Processor:
     def __init__(self):
@@ -36,6 +39,12 @@ class Processor:
         pass
 
     def product(self):
+
+        # Product.objects.all().delete()
+        # Collection.objects.all().delete()
+        # Type.objects.all().delete()
+        # Tag.objects.all().delete()
+        # Vendor.objects.all().delete()
 
         # Get Product Feed
         column_map = {
@@ -113,12 +122,6 @@ class Processor:
             column_map=column_map,
             exclude=exclude
         )
-
-        Product.objects.all().delete()
-        Collection.objects.all().delete()
-        Type.objects.all().delete()
-        Tag.objects.all().delete()
-        Vendor.objects.all().delete()
 
         for row in rows:
             print(row['sku'])
@@ -211,3 +214,56 @@ class Processor:
 
             # Write Feed
             product.save()
+
+    def setpart(self):
+
+        Setpart.objects.all().delete()
+
+        # Get Set Parts Data
+        column_map = {
+            'parent_sku': 'parent sku',
+            'sku': 'child sku',
+            'order_code': 'order_code',
+            'title': 'Title',
+            'metal': 'METAL',
+            'diameter': 'DIAMETER',
+            'circulation': 'circulation',
+            'assoc': 'ASSOC',
+            'price': 'PRICE1',
+            'obverse_detail': 'obverse_detail',
+            'reverse_detail': 'reverse_detail',
+            'country': 'Country',
+            'unit_weight': 'UNITWEIGHT',
+        }
+
+        rows = feed.readExcel(
+            file_path=f"{FILEDIR}/midi-set-parts.xlsx",
+            column_map=column_map,
+            exclude=[]
+        )
+
+        for row in rows:
+            try:
+                product = Product.objects.get(
+                    sku=common.to_text(row['parent_sku']))
+            except Product.DoesNotExist:
+                continue
+
+            setpart, _ = Setpart.objects.get_or_create(
+                sku=common.to_text(row['sku']),
+                defaults={
+                    'order_code': common.to_text(row.get('sku')),
+                    'title': common.to_text(row.get('title')),
+                    'metal': common.to_text(row.get('metal')),
+                    'diameter': common.to_text(row.get('diameter')),
+                    'circulation': common.to_text(row.get('circulation')),
+                    'assoc': common.to_text(row.get('assoc')),
+                    'price': common.to_float(row.get('price')),
+                    'obverse_detail': common.to_text(row.get('obverse_detail')),
+                    'reverse_detail': common.to_text(row.get('reverse_detail')),
+                    'country': common.to_text(row.get('country')),
+                    'unit_weight': common.to_float(row.get('unit_weight')),
+                }
+            )
+
+            setpart.products.add(product)

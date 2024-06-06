@@ -74,6 +74,37 @@ class TagAdmin(admin.ModelAdmin):
     ]
 
 
+@admin.register(Setpart)
+class SetpartAdmin(admin.ModelAdmin):
+
+    fields = [
+        'sku',
+        'order_code',
+        'title',
+        'metal',
+        'diameter',
+        'circulation',
+        'assoc',
+        'price',
+        'obverse_detail',
+        'reverse_detail',
+        'country',
+        'unit_weight',
+    ]
+
+    list_display = [
+        'sku',
+        'order_code',
+        'title',
+    ]
+
+    search_fields = [
+        'sku',
+        'order_code',
+        'title',
+    ]
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     class ImageInline(admin.StackedInline):
@@ -133,6 +164,9 @@ class ProductAdmin(admin.ModelAdmin):
             'product_attachment_file',
             'msrp',
             'additional_attributes',
+        ]}),
+        ("Set Parts", {'fields': [
+            'setparts',
         ]}),
         ("Shopify", {'fields': [
             'product_id',
@@ -213,45 +247,4 @@ class ImageAdmin(admin.ModelAdmin):
 
     search_fields = [
         'path',
-    ]
-
-
-@admin.register(Setpart)
-class SetpartAdmin(admin.ModelAdmin):
-    autocomplete_fields = [
-        'product',
-    ]
-
-    fields = [
-        'sku',
-        'product',
-        'order_code',
-        'title',
-        'metal',
-        'diameter',
-        'circulation',
-        'assoc',
-        'price',
-        'obverse_detail',
-        'reverse_detail',
-        'country',
-        'unit_weight',
-    ]
-
-    list_display = [
-        'sku',
-        'product',
-        'order_code',
-        'title',
-    ]
-
-    list_filter = [
-        'product__type__name',
-        'product__collections__name',
-    ]
-
-    search_fields = [
-        'sku',
-        'order_code',
-        'title',
     ]
