@@ -1,6 +1,7 @@
 import os
 import base64
 import json
+import requests
 from pathlib import Path
 from shopify import GraphQL as ShopifyGraphQL, Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel
 
@@ -58,21 +59,34 @@ class Processor:
 
         metafields = []
         for metafield_key in metafield_keys:
-            if metafield_key == "product_attachment_file" and getattr(product, metafield_key):
-                shopify_file = upload_pdf(getattr(product, metafield_key))
-                print(shopify_file)
+            metafield_value = getattr(product, metafield_key)
+
+            if metafield_key == "product_attachment_file":
+                file_path = f"{FILEDIR}/{metafield_value}"
+
+                if file_path and os.path.isfile(file_path):
+                    shopify_file = upload_file(
+                        file_path=file_path,
+                        file_type="application/pdf"
+                    )
+
+                    metafield = {
+                        "namespace": "custom",
+                        "key": metafield_key,
+                        "value": shopify_file
+                    }
+                else:
+                    continue
+            else:
+                if metafield_key == "additional_attributes":
+                    metafield_value = json.dumps(metafield_value)
 
                 metafield = {
                     "namespace": "custom",
                     "key": metafield_key,
-                    "value": shopify_file['file']['id']
+                    "value": metafield_value
                 }
-            else:
-                metafield = {
-                    "namespace": "custom",
-                    "key": metafield_key,
-                    "value": getattr(product, metafield_key)
-                }
+
             metafields.append(metafield)
 
         # Set Part
@@ -151,53 +165,6 @@ class Processor:
         }
 
         return variant_data
-
-
-# https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/stagedUploadsCreate
-def upload_pdf(file, thread=None):
-    # Make sure Processor is properly defined/imported
-    processor = Processor(thread=thread)
-
-    # Adjust ShopifySession based on how sessions are handled in your SDK
-    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
-        with open(f"{FILEDIR}/{file}", "rb") as f:
-            encoded_file = base64.b64encode(f.read()).decode()
-
-            graphQL_client = ShopifyGraphQL()
-
-            mutation = """
-                mutation fileCreate($input: FileCreateInput!) {
-                    fileCreate(input: $input) {
-                        file {
-                            id
-                            url
-                            status
-                        }
-                        userErrors {
-                            field
-                            message
-                        }
-                    }
-                }
-            """
-
-            variables = {
-                'input': {
-                    'originalSource': encoded_file,
-                    'filename': os.path.basename(file),
-                    'mimeType': 'application/pdf'
-                }
-            }
-
-            response = graphQL_client.execute(mutation, variables=variables)
-            responseData = json.loads(response)
-            print(responseData)
-
-            # Assuming the response is structured according to the mutation above
-            shopify_file = responseData.get('data', {}).get(
-                'fileCreate', {}).get('file', None)
-
-            return shopify_file
 
 
 def list_products(thread=None):
@@ -352,6 +319,96 @@ def delete_image(product_id, image_id, thread=None):
             image_to_delete.destroy()
 
         return True
+
+
+def upload_file(file_path, file_type, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+        shopifyGraphQL = ShopifyGraphQL()
+
+        try:
+            # Perform staged upload
+            mutation = """
+                mutation stagedUploadsCreate($input: [StagedUploadInput!]!) {
+                    stagedUploadsCreate(input: $input) {
+                        stagedTargets {
+                            url
+                            parameters {
+                                name
+                                value
+                            }
+                        }
+                        userErrors {
+                            field
+                            message
+                        }
+                    }
+                }
+            """
+            variables = {
+                'input': [
+                    {
+                        'resource': "FILE",
+                        'filename': os.path.basename(file_path),
+                        'mimeType': file_type,
+                        "httpMethod": "POST",
+                    }
+                ]
+            }
+            response = shopifyGraphQL.execute(mutation, variables=variables)
+            response_data = json.loads(response)
+
+            staged_targets = response_data.get('data', {}).get(
+                'stagedUploadsCreate', {}).get('stagedTargets', [])
+            upload_url = staged_targets[0]['url']
+            upload_parameters = staged_targets[0]['parameters']
+
+            upload_data = {param['name']: param['value']
+                           for param in upload_parameters}
+
+            # Upload the file
+            with open(file_path, 'rb') as f:
+                response = requests.post(
+                    upload_url, data=upload_data, files={'file': f})
+
+            uploaded_file_url = upload_data['key']
+
+            # Create file object in Shopify
+            mutation = """
+                mutation fileCreate($files: [FileCreateInput!]!) {
+                    fileCreate(files: $files) {
+                        files {
+                            id
+                            fileStatus
+                            preview {
+                                image {
+                                    url
+                                }
+                            }
+                            createdAt
+                        }
+                    }
+                }
+            """
+            variables = {
+                "files": [
+                    {
+                        "contentType": "FILE",
+                        "originalSource": f"https://storage.googleapis.com/shopify-staged-uploads/{uploaded_file_url}"
+                    }
+                ]
+            }
+            response = shopifyGraphQL.execute(
+                mutation, variables=variables)
+            response_data = json.loads(response)
+
+            file_id = response_data['data']['fileCreate']['files'][0]['id']
+            return file_id
+
+        except Exception as e:
+            print(e)
+            return None
 
 
 def list_collections(thread=None):
