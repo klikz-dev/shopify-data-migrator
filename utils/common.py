@@ -16,7 +16,7 @@ def thread(rows, function):
 
 
 def to_text(text):
-    if (isinstance(text, int) or isinstance(text, float)) and text.is_integer():
+    if (isinstance(text, int) or (isinstance(text, float)) and text.is_integer()):
         return int(text)
 
     if text:
