@@ -1,8 +1,7 @@
 from django.core.management.base import BaseCommand
 
-import os
 from pathlib import Path
-import re
+from tqdm import tqdm
 
 from utils import common, feed
 
@@ -40,21 +39,22 @@ class Processor:
 
     def product(self):
 
-        # Product.objects.all().delete()
-        # Collection.objects.all().delete()
-        # Type.objects.all().delete()
-        # Tag.objects.all().delete()
-        # Vendor.objects.all().delete()
+        Product.objects.all().delete()
+        Collection.objects.all().delete()
+        Type.objects.all().delete()
+        Tag.objects.all().delete()
+        Vendor.objects.all().delete()
+        Image.objects.all().delete()
 
         # Get Product Feed
         column_map = {
             'sku': 'sku',
-            'title': 'title_description',
+            'title': 'title',
             'description': 'long_description',
 
             'type': 'product_type',
-            'collections': 'category',
-            'tags': 'product tags',
+            'collections': 'product_categories',
+            'tags': 'product_tags',
 
             'wholesale': 'wholesale_price',
             'retail': 'retail_price',
@@ -64,8 +64,7 @@ class Processor:
 
             'status': 'status',
 
-            'parent_sku': 'parent sku',
-            'category': 'category',
+            'parent_sku': 'parent_sku',
             'length': 'length',
             'height': 'height',
             'country': 'country',
@@ -90,45 +89,17 @@ class Processor:
             'images': 'images',
         }
 
-        exclude = [
-            'wholesale_price',
-            'dropshipper_fixed_price_rules',
-            'dropshipper_tiered_price_minimum_qty',
-            'wholesale_tiered_price_regular_price',
-            'wholesale_fixed_price_rules',
-            'wholesale_tiered_price_minimum_qty calculated',
-            'fixed_price_rules',
-            'tiered_price_minimum_qty',
-            'product_addons_exclude_global',
-            'hidden',
-            'product_attachment_file',
-            'sort_order',
-            'bundle_items',
-            'subcat3',
-            'subcat4',
-            'subcat5',
-            'gallery1',
-            'gallery2',
-            'gallery',
-            'noImport',
-            'Focus Keyphrase in table web promo',
-            'SEO Title in table web promo',
-            'Meta Description in table web promo',
-            'bulk_qty',
-        ]
-
         rows = feed.readExcel(
-            file_path=f"{FILEDIR}/mid-sized-albums.xlsx",
+            file_path=f"{FILEDIR}/ecc-products-master.xlsx",
             column_map=column_map,
-            exclude=exclude
+            exclude=[]
         )
 
-        for row in rows:
-            print(row['sku'])
+        for row in tqdm(rows):
 
-            product = Product(
-                sku=common.to_text(row['sku'])
-            )
+            sku = common.to_text(row['sku'])
+
+            product = Product(sku=sku)
 
             product.title = common.to_text(row['title'])
             product.handle = common.to_handle(product.title)
@@ -182,7 +153,6 @@ class Processor:
 
             # Attributes
             product.parent_sku = common.to_text(row.get('parent_sku'))
-            product.category = common.to_text(row.get('category'))
             product.length = common.to_float(row.get('length'))
             product.height = common.to_float(row.get('height'))
             product.country = common.to_text(row.get('country'))
@@ -221,28 +191,30 @@ class Processor:
 
         # Get Set Parts Data
         column_map = {
-            'parent_sku': 'parent sku',
-            'sku': 'child sku',
+            'parent_sku': 'parent_sku',
+            'parent_order_code': 'parent_order_code',
+            'sku': 'child_sku',
             'order_code': 'order_code',
-            'title': 'Title',
-            'metal': 'METAL',
-            'diameter': 'DIAMETER',
+            'title': 'title',
+            'metal': 'metal',
+            'diameter': 'diameter',
             'circulation': 'circulation',
-            'assoc': 'ASSOC',
-            'price': 'PRICE1',
+            'assoc': 'assoc',
+            'price': 'price',
             'obverse_detail': 'obverse_detail',
             'reverse_detail': 'reverse_detail',
-            'country': 'Country',
-            'unit_weight': 'UNITWEIGHT',
+            'info': 'full_info',
+            'country': 'country',
+            'unit_weight': 'unit_weight',
         }
 
         rows = feed.readExcel(
-            file_path=f"{FILEDIR}/midi-set-parts.xlsx",
+            file_path=f"{FILEDIR}/ecc-setpart-master.xlsx",
             column_map=column_map,
             exclude=[]
         )
 
-        for row in rows:
+        for row in tqdm(rows):
             try:
                 product = Product.objects.get(
                     sku=common.to_text(row['parent_sku']))
@@ -252,7 +224,8 @@ class Processor:
             setpart, _ = Setpart.objects.get_or_create(
                 sku=common.to_text(row['sku']),
                 defaults={
-                    'order_code': common.to_text(row.get('sku')),
+                    'parent_order_code': common.to_text(row.get('parent_order_code')),
+                    'order_code': common.to_text(row.get('order_code')),
                     'title': common.to_text(row.get('title')),
                     'metal': common.to_text(row.get('metal')),
                     'diameter': common.to_text(row.get('diameter')),
@@ -261,6 +234,7 @@ class Processor:
                     'price': common.to_float(row.get('price')),
                     'obverse_detail': common.to_text(row.get('obverse_detail')),
                     'reverse_detail': common.to_text(row.get('reverse_detail')),
+                    'info': common.to_text(row.get('info')),
                     'country': common.to_text(row.get('country')),
                     'unit_weight': common.to_float(row.get('unit_weight')),
                 }

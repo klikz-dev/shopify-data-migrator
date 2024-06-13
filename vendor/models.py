@@ -55,6 +55,8 @@ class Tag(models.Model):
 class Setpart(models.Model):
     sku = models.CharField(max_length=200, primary_key=True)
 
+    parent_order_code = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
     order_code = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     title = models.CharField(
@@ -72,6 +74,8 @@ class Setpart(models.Model):
     obverse_detail = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     reverse_detail = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    info = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     country = models.CharField(
         max_length=200, default=None, blank=True, null=True)
@@ -115,8 +119,6 @@ class Product(models.Model):
     # Attributes
     parent_sku = models.CharField(
         max_length=200, default=None, blank=True, null=True)
-    category = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
     length = models.FloatField(default=1, null=True, blank=True)
     height = models.FloatField(default=1, null=True, blank=True)
     country = models.CharField(
@@ -124,6 +126,8 @@ class Product(models.Model):
     order_code = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     dimensions = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    denomination = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     era = models.CharField(max_length=200, default=None, blank=True, null=True)
     circulation = models.CharField(

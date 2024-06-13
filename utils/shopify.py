@@ -1,7 +1,8 @@
 import os
 import base64
 import json
-from shopify import Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel
+from pathlib import Path
+from shopify import GraphQL as ShopifyGraphQL, Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel
 
 from utils import common
 
@@ -9,6 +10,8 @@ SHOPIFY_API_BASE_URL = os.getenv('SHOPIFY_API_BASE_URL')
 SHOPIFY_API_VERSION = os.getenv('SHOPIFY_API_VERSION')
 SHOPIFY_API_TOKEN = os.getenv('SHOPIFY_API_TOKEN')
 SHOPIFY_API_THREAD_TOKENS = os.getenv('SHOPIFY_API_THREAD_TOKENS')
+
+FILEDIR = f"{Path(__file__).resolve().parent.parent}/vendor/management/files"
 
 
 class Processor:
@@ -29,12 +32,12 @@ class Processor:
         metafield_keys = [
             'retail',
             'parent_sku',
-            'category',
             'length',
             'height',
             'country',
             'order_code',
             'dimensions',
+            'denomination',
             'era',
             'circulation',
             'metal',
@@ -48,18 +51,28 @@ class Processor:
             'custom_date',
             'news_from_date',
             'news_to_date',
-            'product_attachment_file',
             'msrp',
-            'additional_attributes'
+            'additional_attributes',
+            'product_attachment_file'
         ]
 
         metafields = []
         for metafield_key in metafield_keys:
-            metafield = {
-                "namespace": "custom",
-                "key": metafield_key,
-                "value": getattr(product, metafield_key)
-            }
+            if metafield_key == "product_attachment_file" and getattr(product, metafield_key):
+                shopify_file = upload_pdf(getattr(product, metafield_key))
+                print(shopify_file)
+
+                metafield = {
+                    "namespace": "custom",
+                    "key": metafield_key,
+                    "value": shopify_file['file']['id']
+                }
+            else:
+                metafield = {
+                    "namespace": "custom",
+                    "key": metafield_key,
+                    "value": getattr(product, metafield_key)
+                }
             metafields.append(metafield)
 
         # Set Part
@@ -67,6 +80,7 @@ class Processor:
         for setpart in product.setparts.all():
             setparts.append({
                 'sku': setpart.sku,
+                'parent_order_code': setpart.parent_order_code,
                 'order_code': setpart.order_code,
                 'title': setpart.title,
                 'metal': setpart.metal,
@@ -76,6 +90,7 @@ class Processor:
                 'price': setpart.price,
                 'obverse_detail': setpart.obverse_detail,
                 'reverse_detail': setpart.reverse_detail,
+                'info': setpart.info,
                 'country': setpart.country,
                 'unit_weight': setpart.unit_weight,
             })
@@ -130,11 +145,59 @@ class Processor:
             'weight': product.weight,
             'weight_unit': 'lb',
             'inventory_quantity': product.quantity,
-            'inventory_management': 'shopify',
+            'inventory_management': None,
             'fulfillment_service': 'manual',
+            'taxable': False,
         }
 
         return variant_data
+
+
+# https://shopify.dev/docs/api/admin-graphql/2024-04/mutations/stagedUploadsCreate
+def upload_pdf(file, thread=None):
+    # Make sure Processor is properly defined/imported
+    processor = Processor(thread=thread)
+
+    # Adjust ShopifySession based on how sessions are handled in your SDK
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+        with open(f"{FILEDIR}/{file}", "rb") as f:
+            encoded_file = base64.b64encode(f.read()).decode()
+
+            graphQL_client = ShopifyGraphQL()
+
+            mutation = """
+                mutation fileCreate($input: FileCreateInput!) {
+                    fileCreate(input: $input) {
+                        file {
+                            id
+                            url
+                            status
+                        }
+                        userErrors {
+                            field
+                            message
+                        }
+                    }
+                }
+            """
+
+            variables = {
+                'input': {
+                    'originalSource': encoded_file,
+                    'filename': os.path.basename(file),
+                    'mimeType': 'application/pdf'
+                }
+            }
+
+            response = graphQL_client.execute(mutation, variables=variables)
+            responseData = json.loads(response)
+            print(responseData)
+
+            # Assuming the response is structured according to the mutation above
+            shopify_file = responseData.get('data', {}).get(
+                'fileCreate', {}).get('file', None)
+
+            return shopify_file
 
 
 def list_products(thread=None):

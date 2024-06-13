@@ -3,6 +3,9 @@ from datetime import datetime
 
 
 def to_text(text):
+    if (isinstance(text, int) or isinstance(text, float)) and text.is_integer():
+        return int(text)
+
     if text:
         text = re.sub(r'[^\x20-\x7E]+', '', str(text))
         text = re.sub(r'\s+', ' ', text)

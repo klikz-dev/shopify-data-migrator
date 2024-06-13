@@ -79,6 +79,7 @@ class SetpartAdmin(admin.ModelAdmin):
 
     fields = [
         'sku',
+        'parent_order_code',
         'order_code',
         'title',
         'metal',
@@ -88,12 +89,14 @@ class SetpartAdmin(admin.ModelAdmin):
         'price',
         'obverse_detail',
         'reverse_detail',
+        'info',
         'country',
         'unit_weight',
     ]
 
     list_display = [
         'sku',
+        'parent_order_code',
         'order_code',
         'title',
     ]
@@ -142,12 +145,12 @@ class ProductAdmin(admin.ModelAdmin):
         ]}),
         ("Attributes", {'fields': [
             'parent_sku',
-            'category',
             'length',
             'height',
             'country',
             'order_code',
             'dimensions',
+            'denomination',
             'era',
             'circulation',
             'metal',
@@ -184,8 +187,8 @@ class ProductAdmin(admin.ModelAdmin):
     ]
 
     list_filter = [
-        'vendor',
-        'type',
+        'vendor__name',
+        'type__name',
         'collections',
         'tags',
     ]
@@ -197,12 +200,12 @@ class ProductAdmin(admin.ModelAdmin):
         'description',
         'barcode',
         'parent_sku',
-        'category',
         'length',
         'height',
         'country',
         'order_code',
         'dimensions',
+        'denomination',
         'era',
         'circulation',
         'metal',
