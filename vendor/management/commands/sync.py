@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 
 from pathlib import Path
 
-from utils import shopify
+from utils import shopify, common
 from vendor.models import Product
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
@@ -36,48 +36,66 @@ class Processor:
         products = Product.objects.all()
 
         def sync_product(index, product):
-            if product.product_id:
-                shopify_product = shopify.update_product(
-                    product=product, thread=index)
-                if shopify_product.handle:
-                    product.handle = shopify_product.handle
-                    product.save()
+            try:
+                if product.product_id:
+                    shopify_product = shopify.update_product(
+                        product=product, thread=index)
+                    if shopify_product.handle:
+                        product.handle = shopify_product.handle
+                        product.save()
 
-                    # self.image(product)
+                        print(
+                            f"Product {product.handle} has been updated successfully.")
+                    else:
+                        print(
+                            f"Failed uploading - Product {product.handle}")
 
-                    print(
-                        f"Product {product.handle} has been updated successfully.")
                 else:
-                    print(
-                        f"Failed uploading - Product {product.handle}")
+                    shopify_product = shopify.create_product(
+                        product=product, thread=index)
 
-            else:
-                shopify_product = shopify.create_product(
-                    product=product, thread=index)
+                    if shopify_product.id:
+                        product.product_id = shopify_product.id
+                        product.handle = shopify_product.handle
+                        product.save()
 
-                if shopify_product.id:
-                    product.product_id = shopify_product.id
-                    product.handle = shopify_product.handle
-                    product.save()
+                        self.image(product)
 
-                    self.image(product)
+                        print(
+                            f"Product {shopify_product.id} has been created successfully.")
+                    else:
+                        print(
+                            f"Failed uploading - Product {product.handle}")
 
-                    print(
-                        f"Product {shopify_product.id} has been created successfully.")
-                else:
-                    print(
-                        f"Failed uploading - Product {product.handle}")
+            except Exception as e:
+                print(e)
+                return
 
-        for index, product in enumerate(products):
-            sync_product(index, product)
+        # for index, product in enumerate(products):
+        #     sync_product(index, product)
+
+        common.thread(rows=products, function=sync_product)
 
     def image(self, product):
         images = product.images.all()
-        for image in images:
-            try:
-                shopify_image = shopify.upload_image(product_id=product.product_id,
-                                                     image=f"{FILEDIR}/{image.path}", alt=product.title)
 
-                print(shopify_image)
-            except:
-                continue
+        def sync_image(index, image):
+            try:
+                shopify_image = shopify.upload_image(
+                    product_id=product.product_id,
+                    image=f"{FILEDIR}/{image.path}",
+                    alt=product.title,
+                    thread=index
+                )
+
+                print(
+                    f"Uploaded Image {shopify_image.id} for Product {product.product_id}")
+
+            except Exception as e:
+                print(e)
+                return
+
+        # for index, image in enumerate(images):
+        #     sync_image(index, image)
+
+        common.thread(rows=images, function=sync_image)

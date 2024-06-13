@@ -1,5 +1,18 @@
 import re
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
+def thread(rows, function):
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        future_to_row = {executor.submit(
+            function, index, row): row for index, row in enumerate(rows)}
+
+        for future in as_completed(future_to_row):
+            try:
+                future.result()
+            except Exception as e:
+                print(e)
 
 
 def to_text(text):
