@@ -23,6 +23,9 @@ class Command(BaseCommand):
         if "customer" in options['functions']:
             processor.customer()
 
+        if "order" in options['functions']:
+            processor.order()
+
 
 class Processor:
     def __init__(self):
@@ -33,6 +36,16 @@ class Processor:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def delete(self):
+        # Delete All Customers
+        all_customers = shopify.list_customers()
+
+        def delete_customer(index, customer):
+            print(f"Deleting {customer.id}")
+            shopify.delete_customer(customer.id, thread=index)
+
+        common.thread(rows=all_customers, function=delete_customer)
 
     def product(self):
 
@@ -54,11 +67,12 @@ class Processor:
                             f"Failed uploading - Product {product.handle}")
 
                 else:
-                    shopify_product = shopify.create_product(
+                    shopify_product, shopify_variant = shopify.create_product(
                         product=product, thread=index)
 
                     if shopify_product.id:
                         product.product_id = shopify_product.id
+                        product.variant_id = shopify_variant.id
                         product.handle = shopify_product.handle
                         product.save()
 
@@ -105,6 +119,7 @@ class Processor:
 
     def customer(self):
 
+        # Upload Customers
         customers = Customer.objects.all()
 
         def sync_customer(index, customer):
@@ -119,9 +134,34 @@ class Processor:
                 customer.customer_id = shopify_customer.id
                 customer.save()
                 print(f"Synced customer {shopify_customer.id}")
+            else:
+                print(f"Error syncing customer {customer.customer_no}")
+                print(customer.phone)
 
         # for index, customer in enumerate(customers):
         #     sync_customer(index, customer)
-        #     break
 
         common.thread(rows=customers, function=sync_customer)
+
+    def order(self):
+
+        orders = Order.objects.all().filter(order_id=None)
+
+        def sync_order(index, order):
+            if order.order_id:
+                shopify_order = shopify.update_order(
+                    order=order, thread=index)
+            else:
+                shopify_order = shopify.create_order(
+                    order=order, thread=index)
+
+            if shopify_order.id:
+                order.order_id = shopify_order.id
+                order.save()
+                print(f"Synced order {shopify_order.id}")
+
+        for index, order in enumerate(orders):
+            sync_order(index, order)
+            break
+
+        # common.thread(rows=orders, function=sync_order)

@@ -3,7 +3,8 @@ import base64
 import json
 import requests
 from pathlib import Path
-from shopify import GraphQL as ShopifyGraphQL, Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel, Customer as ShopifyCustomer, Order as ShopifyOrder
+from datetime import datetime
+from shopify import GraphQL as ShopifyGraphQL, Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel, Customer as ShopifyCustomer, Order as ShopifyOrder, LineItem as ShopifyLineItem
 
 from utils import common
 
@@ -214,6 +215,7 @@ def create_product(product, thread=None):
         shopify_variant = ShopifyVariant()
         for key in variant_data.keys():
             setattr(shopify_variant, key, variant_data.get(key))
+        shopify_variant.save()
         shopify_product.variants = [shopify_variant]
 
         shopify_product.save()
@@ -225,7 +227,7 @@ def create_product(product, thread=None):
             shopify_metafield.value = metafield['value']
             shopify_product.add_metafield(shopify_metafield)
 
-        return shopify_product
+        return (shopify_product, shopify_variant)
 
 
 def update_product(product, thread=None):
@@ -262,7 +264,7 @@ def update_product(product, thread=None):
 
             shopify_product.add_metafield(shopify_metafield)
 
-        return shopify_product
+        return (shopify_product, shopify_variant)
 
 
 def delete_product(id, thread=None):
@@ -531,39 +533,49 @@ def create_customer(customer, thread=None):
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        shopify_customer = ShopifyCustomer(
-            {
-                "email": customer.email,
-                "phone": customer.phone,
-                "first_name": customer.first_name,
-                "last_name": customer.last_name,
-                "addresses": [
-                    {
-                        "address1": customer.address1,
-                        "city": customer.city,
-                        "province": customer.state,
-                        "country": customer.country,
-                        "zip": customer.zip,
-                        "last_name": customer.last_name,
-                        "first_name": customer.first_name,
-                        "phone": customer.phone,
-                        "company": customer.company,
-                    }
-                ],
-                "note": customer.note,
-                "tags": customer.tags,
-            }
-        )
-
-        shopify_customer.save()
-
-        metafield_data = {
-            "namespace": "custom",
-            "key": "customer_",
-            "value": customer.customer_no
+        customer_data = {
+            "email": customer.email,
+            "phone": customer.phone,
+            "first_name": customer.first_name,
+            "last_name": customer.last_name,
+            "addresses": [
+                {
+                    "address1": customer.address1,
+                    "city": customer.city,
+                    "province": customer.state,
+                    "country": customer.country,
+                    "zip": customer.zip,
+                    "last_name": customer.last_name,
+                    "first_name": customer.first_name,
+                    "phone": customer.phone,
+                    "company": customer.company,
+                }
+            ],
+            "note": customer.note,
+            "tags": customer.tags,
         }
-        shopify_metafield = ShopifyMetafield(metafield_data)
-        shopify_customer.add_metafield(shopify_metafield)
+
+        shopify_customer = ShopifyCustomer(customer_data)
+
+        if shopify_customer.save():
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "customer_",
+                "value": customer.customer_no
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
+
+        elif customer.email:
+
+            del customer_data['phone']
+            for address in customer_data["addresses"]:
+                if 'phone' in address:
+                    del address['phone']
+
+            shopify_customer = ShopifyCustomer(customer_data)
+            shopify_customer.save()
 
         return shopify_customer
 
@@ -587,43 +599,73 @@ def update_customer(customer, thread=None):
         return shopify_customer
 
 
-def delete_customer(customer, thread=None):
+def delete_customer(id, thread=None):
+
     processor = Processor(thread=thread)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        shopify_customer = ShopifyCustomer(
-            {
-                "email": customer.email,
-                "phone": customer.phone,
-                "first_name": customer.first_name,
-                "last_name": customer.last_name,
-                "addresses": [
-                    {
-                        "address1": customer.address1,
-                        "city": customer.city,
-                        "province": customer.state,
-                        "country": customer.country,
-                        "zip": customer.zip,
-                        "last_name": customer.last_name,
-                        "first_name": customer.first_name,
-                        "phone": customer.phone,
-                        "company": customer.company,
-                    }
-                ],
-                "note": customer.note,
-                "tags": customer.tags,
-            }
-        )
+        shopify_customer = ShopifyCustomer.find(id)
 
-        shopify_customer.save()
+        success = shopify_customer.destroy()
 
-        metafield_data = {
-            "namespace": "custom",
-            "key": "customer_",
-            "value": customer.customer_no
+        return success
+
+
+def create_order(order, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        shopify_order = ShopifyOrder()
+        if order.customer.email:
+            shopify_order.email = order.customer.email
+        if order.customer.phone:
+            shopify_order.phone = order.customer.phone
+
+        shopify_order.customer = {
+            "id": order.customer.customer_id
         }
-        shopify_metafield = ShopifyMetafield(metafield_data)
-        shopify_customer.add_metafield(shopify_metafield)
 
-        return shopify_customer
+        shopify_order.line_items = [ShopifyLineItem({
+            "variant_id": item.product.product_id,
+            "title": item.product.title,
+            "quantity": item.quantity,
+            "price": item.unit_price
+        }) for item in order.lineItems.all()]
+
+        shopify_order.total_price = order.total
+        shopify_order.shipping_lines = [{
+            "title": order.shipping_method,
+            "code": order.shipping_method,
+            "price": order.shipping
+        }]
+
+        if order.order_date:
+            shopify_order.created_at = order.order_date.isoformat()
+        shopify_order.fulfillment_status = "fulfilled"
+
+        shopify_order.save()
+
+        print(shopify_order.errors.full_messages())
+
+        return shopify_order
+
+
+def update_order(order, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        shopify_order = ShopifyOrder.find(order.order_id)
+        shopify_order.customer = order.customer
+        shopify_order.line_items = [ShopifyLineItem({
+            "product_id": item.product.product_id,
+            "quantity": item.quantity,
+            "price": item.unit_price
+        }) for item in order.lineItems.all()]
+        shopify_order.created_at = order.order_date
+
+        shopify_order.save()
+
+        return shopify_order

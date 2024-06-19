@@ -284,9 +284,6 @@ class Processor:
             email = common.to_text(row.get('email'))
             phone = common.to_text(row.get('phone'))
 
-            if not email and not phone:
-                continue
-
             first_name = common.to_text(row.get('first_name'))
             last_name = common.to_text(row.get('last_name'))
             company = common.to_text(row.get('company'))
@@ -296,9 +293,16 @@ class Processor:
             city = common.to_text(row.get('city'))
             state = common.to_text(row.get('state'))
             zip = common.to_text(row.get('zip'))
-            country = common.to_country(row.get('country'))
+            country_code = common.to_text(row.get('country'))
 
-            note = common.to_text(row.get('note')),
+            note = common.to_text(row.get('note'))
+
+            # fine-tune
+            country = common.to_country(country_code)
+            phone = common.to_phone(country, phone)
+
+            if not email and not phone:
+                continue
 
             customer = Customer(
                 customer_no=customer_no,
@@ -325,6 +329,7 @@ class Processor:
         column_map = {
             'order_no': 'ORDERid',
             'shipping': 'TB_SHIP',
+            'shipping_method': 'SHIPLIST',
             'total': 'AMT_PAID',
             'order_date': 'ODR_DATE',
             'note': 'OrderMemo',
@@ -378,8 +383,9 @@ class Processor:
                 defaults={
                     'customer': customer,
                     'shipping': common.to_float(row['shipping']),
+                    'shipping_method': common.to_text(row['shipping_method']),
                     'total': common.to_float(row['total']),
-                    'order_date': common.to_date(row['order_date']),
+                    'order_date': row['order_date'],
                     'note': common.to_text(row['note']),
                 }
             )

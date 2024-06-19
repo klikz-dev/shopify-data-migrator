@@ -325,6 +325,7 @@ class OrderAdmin(admin.ModelAdmin):
         'order_no',
         'customer',
         'shipping',
+        'shipping_method',
         'total',
         'order_date',
         'note',
@@ -336,6 +337,7 @@ class OrderAdmin(admin.ModelAdmin):
         'order_no',
         'customer',
         'shipping',
+        'shipping_method',
         'total',
         'order_date',
         'note',
@@ -346,6 +348,7 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = [
         'order_no',
         'po_number',
+        'shipping_method',
         'order_id',
     ]
 

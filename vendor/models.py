@@ -226,9 +226,11 @@ class Order(models.Model):
         Customer, related_name='orders', on_delete=models.CASCADE, blank=False, null=False)
 
     shipping = models.FloatField(default=0, null=False, blank=False)
+    shipping_method = models.CharField(
+        max_length=2000, default=None, null=True, blank=True)
     total = models.FloatField(default=0, null=False, blank=False)
 
-    order_date = models.DateTimeField(null=True, blank=True)
+    order_date = models.DateField(null=True, blank=True)
 
     note = models.CharField(
         max_length=2000, default=None, null=True, blank=True)
