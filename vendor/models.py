@@ -176,3 +176,82 @@ class Image(models.Model):
 
     def __str__(self):
         return self.product.sku
+
+
+class Customer(models.Model):
+
+    customer_no = models.CharField(max_length=200, primary_key=True)
+
+    email = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    phone = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+
+    first_name = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    last_name = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    company = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    address1 = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    address2 = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    city = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    state = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    zip = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    country = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+
+    note = models.TextField(
+        max_length=2000, default=None, null=True, blank=True)
+    tags = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+
+    customer_id = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+
+class Order(models.Model):
+
+    order_no = models.CharField(max_length=200, primary_key=True)
+
+    customer = models.ForeignKey(
+        Customer, related_name='orders', on_delete=models.CASCADE, blank=False, null=False)
+
+    shipping = models.FloatField(default=0, null=False, blank=False)
+    total = models.FloatField(default=0, null=False, blank=False)
+
+    order_date = models.DateTimeField(null=True, blank=True)
+
+    note = models.CharField(
+        max_length=2000, default=None, null=True, blank=True)
+
+    po_number = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    order_id = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+
+    def __str__(self):
+        return self.order_no
+
+
+class LineItem(models.Model):
+    order = models.ForeignKey(
+        Order, related_name='lineItems', on_delete=models.CASCADE, blank=False, null=False)
+
+    product = models.ForeignKey(
+        Product, related_name='lineItems', on_delete=models.CASCADE, blank=False, null=False)
+
+    unit_price = models.FloatField(default=0, null=False, blank=False)
+    discount = models.FloatField(default=0, null=False, blank=False)
+    quantity = models.IntegerField(default=1, null=False, blank=False)
+
+    def __str__(self):
+        return self.order.order_no

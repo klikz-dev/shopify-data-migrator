@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Vendor, Type, Collection, Tag, Product, Image, Setpart
+from .models import Vendor, Type, Collection, Tag, Product, Image, Setpart, Customer, Order, LineItem
 
 
 @admin.register(Vendor)
@@ -250,4 +250,128 @@ class ImageAdmin(admin.ModelAdmin):
 
     search_fields = [
         'path',
+    ]
+
+
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+
+    fields = [
+        'customer_no',
+        'email',
+        'phone',
+        'first_name',
+        'last_name',
+        'company',
+        'address1',
+        'address2',
+        'city',
+        'state',
+        'zip',
+        'country',
+        'note',
+        'tags',
+        'customer_id',
+    ]
+
+    list_display = [
+        'customer_no',
+        'email',
+        'phone',
+        'first_name',
+        'last_name',
+        'address1',
+        'city',
+        'state',
+        'zip',
+        'country',
+        'customer_id'
+    ]
+
+    list_filter = [
+        'country',
+        'tags'
+    ]
+
+    search_fields = [
+        'customer_no',
+        'email',
+        'phone',
+        'first_name',
+        'last_name',
+        'customer_id',
+    ]
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+
+    class LineItemInline(admin.StackedInline):
+        model = LineItem
+        extra = 0
+
+        fields = [
+            'product',
+            'unit_price',
+            'discount',
+            'quantity',
+        ]
+
+    autocomplete_fields = [
+        'customer',
+    ]
+
+    fields = [
+        'order_no',
+        'customer',
+        'shipping',
+        'total',
+        'order_date',
+        'note',
+        'po_number',
+        'order_id',
+    ]
+
+    list_display = [
+        'order_no',
+        'customer',
+        'shipping',
+        'total',
+        'order_date',
+        'note',
+        'po_number',
+        'order_id',
+    ]
+
+    search_fields = [
+        'order_no',
+        'po_number',
+        'order_id',
+    ]
+
+    inlines = [LineItemInline]
+
+
+@admin.register(LineItem)
+class LineItemAdmin(admin.ModelAdmin):
+
+    autocomplete_fields = [
+        'order',
+        'product',
+    ]
+
+    fields = [
+        'order',
+        'product',
+        'unit_price',
+        'discount',
+        'quantity',
+    ]
+
+    list_display = [
+        'order',
+        'product',
+        'unit_price',
+        'discount',
+        'quantity',
     ]

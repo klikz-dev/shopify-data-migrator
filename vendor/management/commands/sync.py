@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from pathlib import Path
 
 from utils import shopify, common
-from vendor.models import Product
+from vendor.models import Product, Customer, Order
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
 
@@ -19,6 +19,9 @@ class Command(BaseCommand):
 
         if "product" in options['functions']:
             processor.product()
+
+        if "customer" in options['functions']:
+            processor.customer()
 
 
 class Processor:
@@ -99,3 +102,26 @@ class Processor:
         #     sync_image(index, image)
 
         common.thread(rows=images, function=sync_image)
+
+    def customer(self):
+
+        customers = Customer.objects.all()
+
+        def sync_customer(index, customer):
+            if customer.customer_id:
+                shopify_customer = shopify.update_customer(
+                    customer=customer, thread=index)
+            else:
+                shopify_customer = shopify.create_customer(
+                    customer=customer, thread=index)
+
+            if shopify_customer.id:
+                customer.customer_id = shopify_customer.id
+                customer.save()
+                print(f"Synced customer {shopify_customer.id}")
+
+        # for index, customer in enumerate(customers):
+        #     sync_customer(index, customer)
+        #     break
+
+        common.thread(rows=customers, function=sync_customer)

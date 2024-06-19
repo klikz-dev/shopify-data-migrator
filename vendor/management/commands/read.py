@@ -2,10 +2,11 @@ from django.core.management.base import BaseCommand
 
 from pathlib import Path
 from tqdm import tqdm
+import pycountry
 
 from utils import common, feed
 
-from vendor.models import Product, Vendor, Type, Collection, Tag, Image, Setpart
+from vendor.models import Product, Vendor, Type, Collection, Tag, Image, Setpart, Customer, Order, LineItem
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
 IMAGEDIR = f"{Path(__file__).resolve().parent.parent}/files/images"
@@ -25,6 +26,12 @@ class Command(BaseCommand):
 
         if "setpart" in options['functions']:
             processor.setpart()
+
+        if "customer" in options['functions']:
+            processor.customer()
+
+        if "order" in options['functions']:
+            processor.order()
 
 
 class Processor:
@@ -241,3 +248,146 @@ class Processor:
             )
 
             setpart.products.add(product)
+
+    def customer(self):
+        Customer.objects.all().delete()
+
+        column_map = {
+            'customer_no': 'CUSTNUM',
+            'email': 'email',
+            'phone': 'PHONE',
+            'first_name': 'FIRSTNAME',
+            'last_name': 'LASTNAME',
+            'company': 'COMPANY',
+            'address1': 'ADDR',
+            'address2': 'ADDR2',
+            'city': 'CITY',
+            'state': 'STATE',
+            'zip': 'ZIPCODE',
+            'country': 'COUNTRY',
+            'note': 'COMMENT',
+        }
+
+        rows = feed.readExcel(
+            file_path=f"{FILEDIR}/ecc-customers-master.xlsx",
+            column_map=column_map,
+            exclude=[]
+        )
+
+        for row in tqdm(rows):
+
+            customer_no = common.to_int(row.get('customer_no'))
+
+            if customer_no == 0:
+                continue
+
+            email = common.to_text(row.get('email'))
+            phone = common.to_text(row.get('phone'))
+
+            if not email and not phone:
+                continue
+
+            first_name = common.to_text(row.get('first_name'))
+            last_name = common.to_text(row.get('last_name'))
+            company = common.to_text(row.get('company'))
+
+            address1 = common.to_text(row.get('address1'))
+            address2 = common.to_text(row.get('address2'))
+            city = common.to_text(row.get('city'))
+            state = common.to_text(row.get('state'))
+            zip = common.to_text(row.get('zip'))
+            country = common.to_country(row.get('country'))
+
+            note = common.to_text(row.get('note')),
+
+            customer = Customer(
+                customer_no=customer_no,
+                email=email,
+                phone=phone,
+                first_name=first_name,
+                last_name=last_name,
+                company=company,
+                address1=address1,
+                address2=address2,
+                city=city,
+                state=state,
+                zip=zip,
+                country=country,
+                note=note,
+            )
+
+            customer.save()
+
+    def order(self):
+
+        Order.objects.all().delete()
+
+        column_map = {
+            'order_no': 'ORDERid',
+            'shipping': 'TB_SHIP',
+            'total': 'AMT_PAID',
+            'order_date': 'ODR_DATE',
+            'note': 'OrderMemo',
+
+            'unit_price': 'ExtendedPrice',
+            'discount': 'DISCOUNT',
+            'quantity': 'QUANTO',
+
+            'customer_no': 'tblCMS_CUSTNUM',
+            'order_code': 'ITEM',
+        }
+
+        rows = feed.readExcel(
+            file_path=f"{FILEDIR}/ecc-orders-master.xlsx",
+            column_map=column_map,
+            exclude=[]
+        )
+
+        for row in tqdm(rows):
+
+            order_no = common.to_int(row['order_no'])
+            if not order_no:
+                continue
+
+            order_code = common.to_text(row['order_code'])
+            customer_no = common.to_text(row['customer_no'])
+
+            if "(" in order_code:
+                circulation = f'({order_code.split("(")[1]}'
+                order_code = order_code.split("(")[0]
+            else:
+                circulation = ""
+                order_code = order_code
+
+            try:
+                product = Product.objects.filter(
+                    order_code=order_code, circulation=circulation).first()
+            except Product.DoesNotExist:
+                continue
+
+            if not product:
+                continue
+
+            try:
+                customer = Customer.objects.get(customer_no=customer_no)
+            except Customer.DoesNotExist:
+                continue
+
+            order, _ = Order.objects.get_or_create(
+                order_no=order_no,
+                defaults={
+                    'customer': customer,
+                    'shipping': common.to_float(row['shipping']),
+                    'total': common.to_float(row['total']),
+                    'order_date': common.to_date(row['order_date']),
+                    'note': common.to_text(row['note']),
+                }
+            )
+
+            LineItem.objects.create(
+                order=order,
+                product=product,
+                unit_price=common.to_float(row['unit_price']),
+                discount=common.to_float(row['discount']),
+                quantity=common.to_int(row['quantity']),
+            )

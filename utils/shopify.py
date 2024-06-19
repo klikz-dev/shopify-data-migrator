@@ -3,7 +3,7 @@ import base64
 import json
 import requests
 from pathlib import Path
-from shopify import GraphQL as ShopifyGraphQL, Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel
+from shopify import GraphQL as ShopifyGraphQL, Session as ShopifySession, Product as ShopifyProduct, Variant as ShopifyVariant, Metafield as ShopifyMetafield, Image as ShopifyImage, SmartCollection as ShopifyCollection, InventoryLevel as ShopifyInventoryLevel, Customer as ShopifyCustomer, Order as ShopifyOrder
 
 from utils import common
 
@@ -505,3 +505,125 @@ def update_inventory(inventory, thread=None):
 
         else:
             return None
+
+
+def list_customers(thread=None):
+
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        all_shopify_customers = []
+        shopify_customers = ShopifyCustomer.find(limit=250)
+
+        while shopify_customers:
+
+            all_shopify_customers.extend(shopify_customers)
+
+            shopify_customers = shopify_customers.has_next_page(
+            ) and shopify_customers.next_page() or []
+
+        return all_shopify_customers
+
+
+def create_customer(customer, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        shopify_customer = ShopifyCustomer(
+            {
+                "email": customer.email,
+                "phone": customer.phone,
+                "first_name": customer.first_name,
+                "last_name": customer.last_name,
+                "addresses": [
+                    {
+                        "address1": customer.address1,
+                        "city": customer.city,
+                        "province": customer.state,
+                        "country": customer.country,
+                        "zip": customer.zip,
+                        "last_name": customer.last_name,
+                        "first_name": customer.first_name,
+                        "phone": customer.phone,
+                        "company": customer.company,
+                    }
+                ],
+                "note": customer.note,
+                "tags": customer.tags,
+            }
+        )
+
+        shopify_customer.save()
+
+        metafield_data = {
+            "namespace": "custom",
+            "key": "customer_",
+            "value": customer.customer_no
+        }
+        shopify_metafield = ShopifyMetafield(metafield_data)
+        shopify_customer.add_metafield(shopify_metafield)
+
+        return shopify_customer
+
+
+def update_customer(customer, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        shopify_customer = ShopifyCustomer.find(customer.customer_id)
+
+        shopify_customer.email = customer.email
+        shopify_customer.phone = customer.phone
+        shopify_customer.first_name = customer.first_name
+        shopify_customer.last_name = customer.last_name
+        shopify_customer.note = customer.note
+        shopify_customer.tags = customer.tags
+
+        shopify_customer.save()
+
+        return shopify_customer
+
+
+def delete_customer(customer, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        shopify_customer = ShopifyCustomer(
+            {
+                "email": customer.email,
+                "phone": customer.phone,
+                "first_name": customer.first_name,
+                "last_name": customer.last_name,
+                "addresses": [
+                    {
+                        "address1": customer.address1,
+                        "city": customer.city,
+                        "province": customer.state,
+                        "country": customer.country,
+                        "zip": customer.zip,
+                        "last_name": customer.last_name,
+                        "first_name": customer.first_name,
+                        "phone": customer.phone,
+                        "company": customer.company,
+                    }
+                ],
+                "note": customer.note,
+                "tags": customer.tags,
+            }
+        )
+
+        shopify_customer.save()
+
+        metafield_data = {
+            "namespace": "custom",
+            "key": "customer_",
+            "value": customer.customer_no
+        }
+        shopify_metafield = ShopifyMetafield(metafield_data)
+        shopify_customer.add_metafield(shopify_metafield)
+
+        return shopify_customer

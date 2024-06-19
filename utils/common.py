@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import pycountry
 
 
 def thread(rows, function):
@@ -64,3 +65,19 @@ def to_handle(text):
         return handle.strip('-')
     else:
         return ""
+
+
+def to_country(country_code):
+
+    try:
+        country_code = int(country_code)
+        formatted_code = f"{country_code:03d}"
+
+        if formatted_code == "001":
+            return "United States"
+
+        country = pycountry.countries.get(numeric=formatted_code)
+        return country.name if country else None
+
+    except ValueError:
+        return None
