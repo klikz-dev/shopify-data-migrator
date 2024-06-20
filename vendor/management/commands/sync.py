@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from pathlib import Path
 
 from utils import shopify, common
-from vendor.models import Product, Customer, Order
+from vendor.models import Product, Customer, Order, Collection
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
 
@@ -23,11 +23,17 @@ class Command(BaseCommand):
         if "product" in options['functions']:
             processor.product()
 
+        if "variant" in options['functions']:
+            processor.variant()
+
         if "customer" in options['functions']:
             processor.customer()
 
         if "order" in options['functions']:
             processor.order()
+
+        if "collection" in options['functions']:
+            processor.collection()
 
 
 class Processor:
@@ -90,8 +96,9 @@ class Processor:
                             f"Failed uploading - Product {product.handle}")
 
                 else:
-                    shopify_product, shopify_variant = shopify.create_product(
+                    shopify_product = shopify.create_product(
                         product=product, thread=index)
+                    shopify_variant = shopify_product.variants[0]
 
                     if shopify_product.id:
                         product.product_id = shopify_product.id
@@ -115,6 +122,34 @@ class Processor:
         #     sync_product(index, product)
 
         common.thread(rows=products, function=sync_product)
+
+    def variant(self):
+
+        parent_skus = set(Product.objects.all().filter(
+            type__name="Variable").values_list('parent_sku', flat=True).distinct())
+
+        for index, parent_sku in enumerate(parent_skus):
+            print(parent_sku)
+
+            variants = Product.objects.filter(
+                parent_sku=parent_sku).filter(type__name="Variable")
+
+            shopify_product = shopify.create_variable_product(
+                variants=variants, thread=index)
+            shopify_variants = shopify_product.variants
+
+            print(shopify_product)
+            print(shopify_variants)
+
+            if shopify_product.id:
+
+                for shopify_variant in shopify_variants:
+                    variant = Product.objects.get(sku=shopify_variant.sku)
+                    variant.product_id = shopify_product.id
+                    variant.variant_id = shopify_variant.id
+                    variant.save()
+
+            self.image(variants.first())
 
     def image(self, product):
         images = product.images.all()
@@ -188,3 +223,19 @@ class Processor:
             break
 
         # common.thread(rows=orders, function=sync_order)
+
+    def collection(self):
+        collections = Collection.objects.all()
+        for index, collection in enumerate(collections):
+            title = collection.name
+            rules = [{
+                'column': "tag",
+                'relation': "equals",
+                'condition': f"Collection:{title}",
+            }]
+
+            shopify_collection = shopify.create_collection(
+                title=title, rules=rules, thread=index)
+
+            print(
+                f"Collection {shopify_collection.id} has been setup successfully")

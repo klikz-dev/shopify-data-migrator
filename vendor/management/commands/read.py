@@ -81,6 +81,7 @@ class Processor:
             'order_code': 'order_code',
             'dimensions': 'dimensions',
             'era': 'era',
+            'variable': 'variable',
             'circulation': 'circulation',
             'metal': 'metal',
             'misc_product_info': 'misc_product_info',

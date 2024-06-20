@@ -180,11 +180,13 @@ class ProductAdmin(admin.ModelAdmin):
         ]}),
         ("Shopify", {'fields': [
             'product_id',
+            'variant_id',
         ]}),
     ]
 
     list_display = [
         'sku',
+        'parent_sku',
         'title',
         'wholesale',
         'retail',
@@ -193,6 +195,7 @@ class ProductAdmin(admin.ModelAdmin):
         'circulation',
         'status',
         'product_id',
+        'variant_id',
     ]
 
     list_filter = [

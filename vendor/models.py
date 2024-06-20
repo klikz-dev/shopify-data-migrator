@@ -170,6 +170,9 @@ class Product(models.Model):
     # Shopify
     product_id = models.CharField(
         max_length=200, default=None, blank=True, null=True)
+    # Shopify
+    variant_id = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
 
     def __str__(self):
         return self.title

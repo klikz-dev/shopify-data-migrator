@@ -151,9 +151,11 @@ class Processor:
             "tags": product_tags,
         }
 
+        print(product_data)
+
         return product_data
 
-    def generate_variant_data(self, product):
+    def generate_variant_data(self, product, option=None):
 
         variant_data = {
             'price': product.wholesale,
@@ -166,6 +168,9 @@ class Processor:
             'fulfillment_service': 'manual',
             'taxable': False,
         }
+
+        if option:
+            variant_data['option1'] = option
 
         return variant_data
 
@@ -229,6 +234,61 @@ def create_product(product, thread=None):
             shopify_product.add_metafield(shopify_metafield)
 
         return (shopify_product, shopify_variant)
+
+
+def create_variable_product(variants, thread=None):
+
+    processor = Processor(thread=thread)
+
+    product = variants.first()
+
+    product_data = processor.generate_product_data(product=product)
+    metafields = processor.generate_product_metafields(product=product)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        shopify_product = ShopifyProduct()
+        for key in product_data.keys():
+            setattr(shopify_product, key, product_data.get(key))
+
+        # shopify_product.options = [{"name": product.variable}]
+        shopify_product.options = [
+            {"name": "Grade" if "Window" in product.title else "Astrological Sign"}]
+
+        shopify_variants = []
+        for variant in variants:
+            variant_data = processor.generate_variant_data(
+                product=variant, option=variant.circulation)
+            shopify_variant = ShopifyVariant()
+            for key in variant_data.keys():
+                setattr(shopify_variant, key, variant_data.get(key))
+            shopify_variants.append(shopify_variant)
+
+        shopify_product.variants = shopify_variants
+
+        if shopify_product.save():
+
+            for metafield in metafields:
+                shopify_metafield = ShopifyMetafield()
+                shopify_metafield.namespace = metafield['namespace']
+                shopify_metafield.key = metafield['key']
+                shopify_metafield.value = metafield['value']
+                shopify_product.add_metafield(shopify_metafield)
+
+            for variant in shopify_product.variants:
+                if variant.option1.lower() == "default title":
+                    try:
+                        variant.destroy()
+                        print(
+                            f"Deleted variant with ID {variant.id} and title 'default title'")
+                    except Exception as e:
+                        print(
+                            f"Failed to delete variant with ID {variant.id}: {str(e)}")
+
+        else:
+            print(shopify_product.errors.full_messages())
+
+        return shopify_product
 
 
 def update_product(product, thread=None):
