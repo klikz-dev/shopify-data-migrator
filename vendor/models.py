@@ -54,35 +54,34 @@ class Tag(models.Model):
 
 class Setpart(models.Model):
     sku = models.CharField(max_length=200, primary_key=True)
-
-    parent_order_code = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
     order_code = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     title = models.CharField(
         max_length=200, default=None, blank=True, null=True)
+    parent_order_code = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
 
-    metal = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    diameter = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    circulation = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    assoc = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    price = models.FloatField(default=1, null=True, blank=True)
-    obverse_detail = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    reverse_detail = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    info = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    country = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
-    unit_weight = models.FloatField(default=1, null=True, blank=True)
+    # metal = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # diameter = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # circulation = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # assoc = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # price = models.FloatField(default=1, null=True, blank=True)
+    # obverse_detail = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # reverse_detail = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # info = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # country = models.CharField(
+    #     max_length=200, default=None, blank=True, null=True)
+    # unit_weight = models.FloatField(default=1, null=True, blank=True)
 
     def __str__(self):
-        return self.title
+        return self.sku
 
 
 class Product(models.Model):
@@ -115,6 +114,9 @@ class Product(models.Model):
 
     # Status
     status = models.BooleanField(default=True)
+    add_box = models.BooleanField(default=True)
+    show_component = models.BooleanField(default=True)
+    track_qty = models.BooleanField(default=True)
 
     # Attributes
     parent_sku = models.CharField(
@@ -130,8 +132,6 @@ class Product(models.Model):
     denomination = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     era = models.CharField(max_length=200, default=None, blank=True, null=True)
-    circulation = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
     metal = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     misc_product_info = models.CharField(
@@ -156,6 +156,12 @@ class Product(models.Model):
     msrp = models.FloatField(default=1, null=True, blank=True)
     additional_attributes = models.JSONField(
         default=dict, blank=True, null=True)
+
+    # Variant
+    variable = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
+    circulation = models.CharField(
+        max_length=200, default=None, blank=True, null=True)
 
     # Set Parts
     setparts = models.ManyToManyField(

@@ -79,32 +79,33 @@ class SetpartAdmin(admin.ModelAdmin):
 
     fields = [
         'sku',
-        'parent_order_code',
         'order_code',
         'title',
-        'metal',
-        'diameter',
-        'circulation',
-        'assoc',
-        'price',
-        'obverse_detail',
-        'reverse_detail',
-        'info',
-        'country',
-        'unit_weight',
+        'parent_order_code',
+        # 'metal',
+        # 'diameter',
+        # 'circulation',
+        # 'assoc',
+        # 'price',
+        # 'obverse_detail',
+        # 'reverse_detail',
+        # 'info',
+        # 'country',
+        # 'unit_weight',
     ]
 
     list_display = [
         'sku',
-        'parent_order_code',
         'order_code',
         'title',
+        'parent_order_code',
     ]
 
     search_fields = [
         'sku',
         'order_code',
         'title',
+        'parent_order_code',
     ]
 
 
@@ -142,6 +143,9 @@ class ProductAdmin(admin.ModelAdmin):
         ]}),
         ("Status", {'fields': [
             'status',
+            'add_box',
+            'show_component',
+            'track_qty',
         ]}),
         ("Attributes", {'fields': [
             'parent_sku',
@@ -152,7 +156,6 @@ class ProductAdmin(admin.ModelAdmin):
             'dimensions',
             'denomination',
             'era',
-            'circulation',
             'metal',
             'misc_product_info',
             'obverse_detail',
@@ -168,6 +171,10 @@ class ProductAdmin(admin.ModelAdmin):
             'msrp',
             'additional_attributes',
         ]}),
+        ("Variant", {'fields': [
+            'variable',
+            'circulation',
+        ]}),
         ("Set Parts", {'fields': [
             'setparts',
         ]}),
@@ -182,13 +189,18 @@ class ProductAdmin(admin.ModelAdmin):
         'wholesale',
         'retail',
         'order_code',
+        'variable',
+        'circulation',
         'status',
         'product_id',
     ]
 
     list_filter = [
-        'vendor__name',
         'type__name',
+        'status',
+        'add_box',
+        'show_component',
+        'track_qty',
         'collections',
         'tags',
     ]

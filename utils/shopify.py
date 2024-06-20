@@ -32,6 +32,8 @@ class Processor:
 
     def generate_product_metafields(self, product):
         metafield_keys = [
+            'add_box',
+            'show_component',
             'retail',
             'parent_sku',
             'length',
@@ -95,19 +97,19 @@ class Processor:
         for setpart in product.setparts.all():
             setparts.append({
                 'sku': setpart.sku,
-                'parent_order_code': setpart.parent_order_code,
                 'order_code': setpart.order_code,
                 'title': setpart.title,
-                'metal': setpart.metal,
-                'diameter': setpart.diameter,
-                'circulation': setpart.circulation,
-                'assoc': setpart.assoc,
-                'price': setpart.price,
-                'obverse_detail': setpart.obverse_detail,
-                'reverse_detail': setpart.reverse_detail,
-                'info': setpart.info,
-                'country': setpart.country,
-                'unit_weight': setpart.unit_weight,
+                'parent_order_code': setpart.parent_order_code,
+                # 'metal': setpart.metal,
+                # 'diameter': setpart.diameter,
+                # 'circulation': setpart.circulation,
+                # 'assoc': setpart.assoc,
+                # 'price': setpart.price,
+                # 'obverse_detail': setpart.obverse_detail,
+                # 'reverse_detail': setpart.reverse_detail,
+                # 'info': setpart.info,
+                # 'country': setpart.country,
+                # 'unit_weight': setpart.unit_weight,
             })
 
         setpart_metafield = {
@@ -160,7 +162,7 @@ class Processor:
             'weight': product.weight,
             'weight_unit': 'lb',
             'inventory_quantity': product.quantity,
-            'inventory_management': None,
+            'inventory_management': "shopify" if product.track_qty else None,
             'fulfillment_service': 'manual',
             'taxable': False,
         }
@@ -215,7 +217,6 @@ def create_product(product, thread=None):
         shopify_variant = ShopifyVariant()
         for key in variant_data.keys():
             setattr(shopify_variant, key, variant_data.get(key))
-        shopify_variant.save()
         shopify_product.variants = [shopify_variant]
 
         shopify_product.save()
@@ -294,6 +295,7 @@ def upload_image(product_id, image, alt, thread=None):
                 'attachment': encoded_string,
                 'filename': os.path.basename(image),
                 'alt': alt,
+                'position': thread,
             }
 
             shopify_image = ShopifyImage(image_obj)
@@ -612,6 +614,25 @@ def delete_customer(id, thread=None):
         return success
 
 
+def list_orders(thread=None):
+
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        all_shopify_orders = []
+        shopify_orders = ShopifyOrder.find(limit=250, status="any")
+
+        while shopify_orders:
+
+            all_shopify_orders.extend(shopify_orders)
+
+            shopify_orders = shopify_orders.has_next_page(
+            ) and shopify_orders.next_page() or []
+
+        return all_shopify_orders
+
+
 def create_order(order, thread=None):
     processor = Processor(thread=thread)
 
@@ -669,3 +690,16 @@ def update_order(order, thread=None):
         shopify_order.save()
 
         return shopify_order
+
+
+def delete_order(id, thread=None):
+
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+
+        shopify_order = ShopifyOrder.find(id)
+
+        success = shopify_order.destroy()
+
+        return success

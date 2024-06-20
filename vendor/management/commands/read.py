@@ -70,6 +70,9 @@ class Processor:
             'weight': 'weight',
 
             'status': 'status',
+            'add_box': 'add_box',
+            'show_component': 'show_component',
+            'track_qty': 'track_qty',
 
             'parent_sku': 'parent_sku',
             'length': 'length',
@@ -152,11 +155,15 @@ class Processor:
 
             # Inventory & Shipping
             product.quantity = 1000 if common.to_text(
-                row['stock']).lower() == "instock" else 0
+                row['stock']) == "instock" else 0
             product.weight = common.to_float(row['weight'])
 
             # Status
-            product.status = common.to_text(row['status']).lower() == "publish"
+            product.status = common.to_text(row['status']) == "publish"
+            product.add_box = common.to_text(row['add_box']) == True
+            product.show_component = common.to_text(
+                row['show_component']) == True
+            product.track_qty = common.to_text(row['track_qty']) == True
 
             # Attributes
             product.parent_sku = common.to_text(row.get('parent_sku'))
@@ -166,6 +173,7 @@ class Processor:
             product.order_code = common.to_text(row.get('order_code'))
             product.dimensions = common.to_text(row.get('dimensions'))
             product.era = common.to_text(row.get('era'))
+            product.variable = common.to_text(row.get('variable'))
             product.circulation = common.to_text(row.get('circulation'))
             product.metal = common.to_text(row.get('metal'))
             product.misc_product_info = common.to_text(
@@ -199,20 +207,21 @@ class Processor:
         # Get Set Parts Data
         column_map = {
             'parent_sku': 'parent_sku',
-            'parent_order_code': 'parent_order_code',
+
             'sku': 'child_sku',
             'order_code': 'order_code',
             'title': 'title',
-            'metal': 'metal',
-            'diameter': 'diameter',
-            'circulation': 'circulation',
-            'assoc': 'assoc',
-            'price': 'price',
-            'obverse_detail': 'obverse_detail',
-            'reverse_detail': 'reverse_detail',
-            'info': 'full_info',
-            'country': 'country',
-            'unit_weight': 'unit_weight',
+            'parent_order_code': 'parent_order_code',
+            # 'metal': 'metal',
+            # 'diameter': 'diameter',
+            # 'circulation': 'circulation',
+            # 'assoc': 'assoc',
+            # 'price': 'price',
+            # 'obverse_detail': 'obverse_detail',
+            # 'reverse_detail': 'reverse_detail',
+            # 'info': 'full_info',
+            # 'country': 'country',
+            # 'unit_weight': 'unit_weight',
         }
 
         rows = feed.readExcel(
@@ -231,19 +240,19 @@ class Processor:
             setpart, _ = Setpart.objects.get_or_create(
                 sku=common.to_text(row['sku']),
                 defaults={
-                    'parent_order_code': common.to_text(row.get('parent_order_code')),
                     'order_code': common.to_text(row.get('order_code')),
                     'title': common.to_text(row.get('title')),
-                    'metal': common.to_text(row.get('metal')),
-                    'diameter': common.to_text(row.get('diameter')),
-                    'circulation': common.to_text(row.get('circulation')),
-                    'assoc': common.to_text(row.get('assoc')),
-                    'price': common.to_float(row.get('price')),
-                    'obverse_detail': common.to_text(row.get('obverse_detail')),
-                    'reverse_detail': common.to_text(row.get('reverse_detail')),
-                    'info': common.to_text(row.get('info')),
-                    'country': common.to_text(row.get('country')),
-                    'unit_weight': common.to_float(row.get('unit_weight')),
+                    'parent_order_code': common.to_text(row.get('parent_order_code')),
+                    # 'metal': common.to_text(row.get('metal')),
+                    # 'diameter': common.to_text(row.get('diameter')),
+                    # 'circulation': common.to_text(row.get('circulation')),
+                    # 'assoc': common.to_text(row.get('assoc')),
+                    # 'price': common.to_float(row.get('price')),
+                    # 'obverse_detail': common.to_text(row.get('obverse_detail')),
+                    # 'reverse_detail': common.to_text(row.get('reverse_detail')),
+                    # 'info': common.to_text(row.get('info')),
+                    # 'country': common.to_text(row.get('country')),
+                    # 'unit_weight': common.to_float(row.get('unit_weight')),
                 }
             )
 

@@ -17,6 +17,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         processor = Processor()
 
+        if "delete" in options['functions']:
+            processor.delete()
+
         if "product" in options['functions']:
             processor.product()
 
@@ -38,18 +41,38 @@ class Processor:
         pass
 
     def delete(self):
+        # Delete All Orders
+        # all_orders = shopify.list_orders()
+
+        # def delete_order(index, order):
+        #     print(f"Deleting {order.id}")
+        #     shopify.delete_order(order.id, thread=index)
+
+        # common.thread(rows=all_orders, function=delete_order)
+
         # Delete All Customers
-        all_customers = shopify.list_customers()
+        # all_customers = shopify.list_customers()
 
-        def delete_customer(index, customer):
-            print(f"Deleting {customer.id}")
-            shopify.delete_customer(customer.id, thread=index)
+        # def delete_customer(index, customer):
+        #     print(f"Deleting {customer.id}")
+        #     shopify.delete_customer(customer.id, thread=index)
 
-        common.thread(rows=all_customers, function=delete_customer)
+        # common.thread(rows=all_customers, function=delete_customer)
+
+        # Delete All Products
+        # all_products = shopify.list_products()
+
+        # def delete_product(index, product):
+        #     print(f"Deleting {product.id}")
+        #     shopify.delete_product(product.id, thread=index)
+
+        # common.thread(rows=all_products, function=delete_product)
+
+        pass
 
     def product(self):
 
-        products = Product.objects.all()
+        products = Product.objects.all().filter(type__name="Simple")
 
         def sync_product(index, product):
             try:
