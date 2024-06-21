@@ -30,6 +30,9 @@ class Command(BaseCommand):
         if "customer" in options['functions']:
             processor.customer()
 
+        if "customer-update" in options['functions']:
+            processor.customer_update()
+
         if "order" in options['functions']:
             processor.order()
 
@@ -276,6 +279,7 @@ class Processor:
             'zip': 'ZIPCODE',
             'country': 'COUNTRY',
             'note': 'COMMENT',
+            'comm': 'chkComm'
         }
 
         rows = feed.readExcel(
@@ -306,6 +310,7 @@ class Processor:
             country_code = common.to_text(row.get('country'))
 
             note = common.to_text(row.get('note'))
+            comm = row.get('comm')
 
             # fine-tune
             country = common.to_country(country_code)
@@ -328,7 +333,99 @@ class Processor:
                 zip=zip,
                 country=country,
                 note=note,
+                comm=comm,
             )
+
+            customer.save()
+
+    def customer_update(self):
+
+        column_map = {
+            'customer_no': 'ECC Customer Number',
+            'email': 'User Email',
+            'phone': 'Billing Phone',
+            'first_name': 'First Name',
+            'last_name': 'Last Name',
+            'company': 'Shipping Company',
+            'address1': 'Shipping Address 1',
+            'address2': 'Shipping Address 2',
+            'city': 'Shipping City',
+            'state': 'Shipping State',
+            'zip': 'Shipping Postcode',
+            'country': 'Shipping Country',
+            'type': 'Type',
+        }
+
+        rows = feed.readExcel(
+            file_path=f"{FILEDIR}/ecc-customers-master-update.xlsx",
+            column_map=column_map,
+            exclude=[]
+        )
+
+        for row in tqdm(rows):
+
+            customer_no = common.to_int(row.get('customer_no'))
+            email = common.to_text(row.get('email'))
+
+            try:
+                if customer_no > 0:
+                    customer = Customer.objects.get(customer_no=customer_no)
+                elif email:
+                    customer = Customer.objects.get(email=email)
+                else:
+                    continue
+            except Customer.DoesNotExist:
+                continue
+            except:
+                continue
+
+            if email:
+                customer.email = email
+
+            phone = common.to_text(row.get('phone'))
+            if phone:
+                customer.phone = phone
+
+            first_name = common.to_text(row.get('first_name'))
+            if first_name:
+                customer.first_name = phone
+
+            last_name = common.to_text(row.get('last_name'))
+            if last_name:
+                customer.last_name = last_name
+
+            company = common.to_text(row.get('company'))
+            if company:
+                customer.company = company
+
+            address1 = common.to_text(row.get('address1'))
+            if address1:
+                customer.address1 = address1
+
+            address2 = common.to_text(row.get('address2'))
+            if address2:
+                customer.address2 = address2
+
+            city = common.to_text(row.get('city'))
+            if city:
+                customer.city = city
+
+            state = common.to_text(row.get('state'))
+            if state:
+                customer.state = state
+
+            zip = common.to_text(row.get('zip'))
+            if zip:
+                customer.zip = zip
+
+            country = common.to_text(row.get('country'))
+            if country:
+                customer.country = country
+
+            type = common.to_text(row.get('type')).lower()
+            if type:
+                customer.type = type
+                customer.tags = type
 
             customer.save()
 
@@ -344,7 +441,7 @@ class Processor:
             'order_date': 'ODR_DATE',
             'note': 'OrderMemo',
 
-            'unit_price': 'ExtendedPrice',
+            'unit_price': 'IT_UNLIST',
             'discount': 'DISCOUNT',
             'quantity': 'QUANTO',
 

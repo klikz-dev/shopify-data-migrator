@@ -286,6 +286,8 @@ class CustomerAdmin(admin.ModelAdmin):
         'country',
         'note',
         'tags',
+        'type',
+        'comm',
         'customer_id',
     ]
 
@@ -300,10 +302,14 @@ class CustomerAdmin(admin.ModelAdmin):
         'state',
         'zip',
         'country',
+        'type',
+        'comm',
         'customer_id'
     ]
 
     list_filter = [
+        'type',
+        'comm',
         'country',
         'tags'
     ]
@@ -343,21 +349,20 @@ class OrderAdmin(admin.ModelAdmin):
         'shipping_method',
         'total',
         'order_date',
-        'note',
         'po_number',
         'order_id',
+        'note',
     ]
 
     list_display = [
+        'order_id',
         'order_no',
         'customer',
         'shipping',
         'shipping_method',
         'total',
         'order_date',
-        'note',
         'po_number',
-        'order_id',
     ]
 
     search_fields = [

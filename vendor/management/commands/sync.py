@@ -48,13 +48,13 @@ class Processor:
 
     def delete(self):
         # Delete All Orders
-        # all_orders = shopify.list_orders()
+        all_orders = shopify.list_orders()
 
-        # def delete_order(index, order):
-        #     print(f"Deleting {order.id}")
-        #     shopify.delete_order(order.id, thread=index)
+        def delete_order(index, order):
+            print(f"Deleting {order.id}")
+            shopify.delete_order(order.id, thread=index)
 
-        # common.thread(rows=all_orders, function=delete_order)
+        common.thread(rows=all_orders, function=delete_order)
 
         # Delete All Customers
         # all_customers = shopify.list_customers()
@@ -203,26 +203,25 @@ class Processor:
 
     def order(self):
 
-        orders = Order.objects.all().filter(order_id=None)
+        orders = Order.objects.all()
 
         def sync_order(index, order):
-            if order.order_id:
-                shopify_order = shopify.update_order(
-                    order=order, thread=index)
-            else:
-                shopify_order = shopify.create_order(
-                    order=order, thread=index)
+            # if order.order_id:
+            #     shopify_order = shopify.update_order(
+            #         order=order, thread=index)
+            # else:
+            shopify_order = shopify.create_order(
+                order=order, thread=index)
 
             if shopify_order.id:
                 order.order_id = shopify_order.id
                 order.save()
                 print(f"Synced order {shopify_order.id}")
 
-        for index, order in enumerate(orders):
-            sync_order(index, order)
-            break
+        # for index, order in enumerate(orders):
+        #     sync_order(index, order)
 
-        # common.thread(rows=orders, function=sync_order)
+        common.thread(rows=orders, function=sync_order)
 
     def collection(self):
         collections = Collection.objects.all()

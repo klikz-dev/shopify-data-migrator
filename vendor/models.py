@@ -220,6 +220,10 @@ class Customer(models.Model):
     tags = models.CharField(
         max_length=200, default=None, null=True, blank=True)
 
+    type = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    comm = models.BooleanField(default=False)
+
     customer_id = models.CharField(
         max_length=200, default=None, null=True, blank=True)
 

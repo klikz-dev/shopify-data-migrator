@@ -629,6 +629,22 @@ def create_customer(customer, thread=None):
             shopify_metafield = ShopifyMetafield(metafield_data)
             shopify_customer.add_metafield(shopify_metafield)
 
+            metafield_data = {
+                "namespace": "custom",
+                "key": "customer_type",
+                "value": customer.type
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "trade_show_sales_representative",
+                "value": customer.comm
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
+
         elif customer.email:
 
             del customer_data['phone']
@@ -638,6 +654,30 @@ def create_customer(customer, thread=None):
 
             shopify_customer = ShopifyCustomer(customer_data)
             shopify_customer.save()
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "customer_",
+                "value": customer.customer_no
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "customer_type",
+                "value": customer.type
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "trade_show_sales_representative",
+                "value": customer.comm
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
 
         return shopify_customer
 
@@ -656,7 +696,31 @@ def update_customer(customer, thread=None):
         shopify_customer.note = customer.note
         shopify_customer.tags = customer.tags
 
-        shopify_customer.save()
+        if shopify_customer.save():
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "customer_",
+                "value": customer.customer_no
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "customer_type",
+                "value": customer.type
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
+
+            metafield_data = {
+                "namespace": "custom",
+                "key": "trade_show_sales_representative",
+                "value": customer.comm
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_customer.add_metafield(shopify_metafield)
 
         return shopify_customer
 
@@ -699,21 +763,32 @@ def create_order(order, thread=None):
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
         shopify_order = ShopifyOrder()
-        if order.customer.email:
-            shopify_order.email = order.customer.email
-        if order.customer.phone:
-            shopify_order.phone = order.customer.phone
+        # if order.customer.email:
+        #     shopify_order.email = order.customer.email
+        # if order.customer.phone:
+        #     shopify_order.phone = order.customer.phone
 
         shopify_order.customer = {
             "id": order.customer.customer_id
         }
 
-        shopify_order.line_items = [ShopifyLineItem({
-            "variant_id": item.product.product_id,
-            "title": item.product.title,
-            "quantity": item.quantity,
-            "price": item.unit_price
-        }) for item in order.lineItems.all()]
+        line_items = []
+        for item in order.lineItems.all():
+            try:
+                shopify_product = ShopifyProduct.find(item.product.product_id)
+                variant_id = shopify_product.variants[0].id
+            except:
+                continue
+
+            line_item = ShopifyLineItem({
+                "variant_id": variant_id,
+                "title": item.product.title,
+                "quantity": item.quantity,
+                "price": item.unit_price
+            })
+            line_items.append(line_item)
+
+        shopify_order.line_items = line_items
 
         shopify_order.total_price = order.total
         shopify_order.shipping_lines = [{
@@ -727,8 +802,6 @@ def create_order(order, thread=None):
         shopify_order.fulfillment_status = "fulfilled"
 
         shopify_order.save()
-
-        print(shopify_order.errors.full_messages())
 
         return shopify_order
 
