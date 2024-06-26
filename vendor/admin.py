@@ -238,6 +238,8 @@ class ProductAdmin(admin.ModelAdmin):
         'product_attachment_file',
         'msrp',
         'additional_attributes',
+        'product_id',
+        'variant_id',
     ]
 
     inlines = [ImageInline]
@@ -350,7 +352,6 @@ class OrderAdmin(admin.ModelAdmin):
         'shipping_method',
         'total',
         'order_date',
-        'po_number',
         'order_id',
         'note',
     ]
@@ -363,12 +364,10 @@ class OrderAdmin(admin.ModelAdmin):
         'shipping_method',
         'total',
         'order_date',
-        'po_number',
     ]
 
     search_fields = [
         'order_no',
-        'po_number',
         'shipping_method',
         'order_id',
     ]

@@ -48,13 +48,13 @@ class Processor:
 
     def delete(self):
         # Delete All Orders
-        # all_orders = shopify.list_orders()
+        all_orders = shopify.list_orders()
 
-        # def delete_order(index, order):
-        #     print(f"Deleting {order.id}")
-        #     shopify.delete_order(order.id, thread=index)
+        def delete_order(index, order):
+            print(f"Deleting {order.id}")
+            shopify.delete_order(order.id, thread=index)
 
-        # common.thread(rows=all_orders, function=delete_order)
+        common.thread(rows=all_orders, function=delete_order)
 
         # Delete All Customers
         # all_customers = shopify.list_customers()
@@ -66,13 +66,13 @@ class Processor:
         # common.thread(rows=all_customers, function=delete_customer)
 
         # Delete All Products
-        all_products = shopify.list_products()
+        # all_products = shopify.list_products()
 
-        def delete_product(index, product):
-            print(f"Deleting {product.id}")
-            shopify.delete_product(product.id, thread=index)
+        # def delete_product(index, product):
+        #     print(f"Deleting {product.id}")
+        #     shopify.delete_product(product.id, thread=index)
 
-        common.thread(rows=all_products, function=delete_product)
+        # common.thread(rows=all_products, function=delete_product)
 
         # Delete All Variants
         # all_variant_ids = set(Product.objects.filter(
@@ -86,6 +86,7 @@ class Processor:
     def product(self):
 
         products = Product.objects.all().filter(type__name="Simple")
+        total = len(products)
 
         def sync_product(index, product):
             try:
@@ -97,7 +98,7 @@ class Processor:
                         product.save()
 
                         print(
-                            f"Product {product.handle} has been updated successfully.")
+                            f"{index}/{total} -- Product {product.handle} has been updated successfully.")
                     else:
                         print(
                             f"Failed uploading - Product {product.handle}")
@@ -114,7 +115,7 @@ class Processor:
                         self.image(product)
 
                         print(
-                            f"Product {shopify_product.id} has been created successfully.")
+                            f"{index}/{total} -- Product {shopify_product.id} has been created successfully.")
                     else:
                         print(
                             f"Failed uploading - Product {product.handle}")
@@ -132,21 +133,17 @@ class Processor:
 
         parent_skus = set(Product.objects.all().filter(
             type__name="Variable").values_list('parent_sku', flat=True).distinct())
+        total = len(parent_skus)
 
         for index, parent_sku in enumerate(parent_skus):
-            print(parent_sku)
-
             product = Product.objects.get(sku=parent_sku)
 
             variants = Product.objects.filter(
-                parent_sku=parent_sku).filter(type__name="Variable")
+                parent_sku=parent_sku).filter(type__name="Variable").exclude(variable="")
 
             shopify_product = shopify.create_variable_product(
                 product=product, variants=variants, thread=index)
             shopify_variants = shopify_product.variants
-
-            # print(shopify_product)
-            # print(shopify_variants)
 
             if shopify_product.id:
 
@@ -157,6 +154,9 @@ class Processor:
                     variant.save()
 
             # self.image(variants.first())
+
+            print(
+                f"{index}/{total} -- Variant {parent_sku} has been created successfully.")
 
     def image(self, product):
         images = product.images.all()
@@ -185,7 +185,8 @@ class Processor:
     def customer(self):
 
         # Upload Customers
-        customers = Customer.objects.all()
+        customers = Customer.objects.all().filter(customer_id=None)
+        total = len(customers)
 
         def sync_customer(index, customer):
             if customer.customer_id:
@@ -198,7 +199,7 @@ class Processor:
             if shopify_customer.id:
                 customer.customer_id = shopify_customer.id
                 customer.save()
-                print(f"Synced customer {shopify_customer.id}")
+                print(f"{index}/{total} -- Synced customer {shopify_customer.id}")
             else:
                 print(f"Error syncing customer {customer.customer_no}")
                 print(customer.phone)
@@ -211,19 +212,23 @@ class Processor:
     def order(self):
 
         orders = Order.objects.all()
+        total = len(orders)
 
         def sync_order(index, order):
-            # if order.order_id:
-            #     shopify_order = shopify.update_order(
-            #         order=order, thread=index)
-            # else:
-            shopify_order = shopify.create_order(
-                order=order, thread=index)
+            if order.order_id:
+                # shopify_order = shopify.update_order(
+                #     order=order, thread=index)
+                return
+            else:
+                shopify_order = shopify.create_order(
+                    order=order, thread=index)
 
             if shopify_order.id:
                 order.order_id = shopify_order.id
                 order.save()
-                print(f"Synced order {shopify_order.id}")
+
+                print(
+                    f"{index}/{total} -- Order {order.order_no} has been created successfully.")
 
         # for index, order in enumerate(orders):
         #     sync_order(index, order)

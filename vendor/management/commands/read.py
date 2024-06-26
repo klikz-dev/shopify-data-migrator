@@ -239,10 +239,12 @@ class Processor:
         )
 
         for row in tqdm(rows):
+            parent_sku = common.to_text(row['parent_sku'])
             try:
                 product = Product.objects.get(
-                    sku=common.to_text(row['parent_sku']))
+                    sku=parent_sku)
             except Product.DoesNotExist:
+                # print(f"{parent_sku} Not found")
                 continue
 
             setpart, _ = Setpart.objects.get_or_create(

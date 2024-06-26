@@ -167,7 +167,7 @@ class Product(models.Model):
 
     # Set Parts
     setparts = models.ManyToManyField(
-        Setpart, related_name="products", blank=False)
+        Setpart, related_name="products", blank=True)
 
     # Shopify
     product_id = models.CharField(
@@ -181,7 +181,7 @@ class Product(models.Model):
 
 
 class Image(models.Model):
-    path = models.URLField(max_length=1000, blank=False, null=False)
+    path = models.CharField(max_length=1000, default=None, blank=False, null=False)
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE, blank=False, null=False)
 
@@ -250,8 +250,6 @@ class Order(models.Model):
     note = models.CharField(
         max_length=2000, default=None, null=True, blank=True)
 
-    po_number = models.CharField(
-        max_length=200, default=None, null=True, blank=True)
     order_id = models.CharField(
         max_length=200, default=None, null=True, blank=True)
 

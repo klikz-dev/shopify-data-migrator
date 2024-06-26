@@ -131,6 +131,9 @@ class Processor:
 
         for collection in collections:
             tags.append(f"Collection:{collection.name}")
+            parent_collections = collection.parents.all()
+            for parent_collection in parent_collections:
+                tags.append(f"Collection:{parent_collection.name}")
 
         for tag in product.tags.all():
             tags.append(f"{tag.name}")
@@ -293,8 +296,8 @@ def update_product(product, thread=None):
     processor = Processor(thread=thread)
 
     product_data = processor.generate_product_data(product=product)
-    variant_data = processor.generate_variant_data(product=product)
-    metafields = processor.generate_product_metafields(product=product)
+    # variant_data = processor.generate_variant_data(product=product)
+    # metafields = processor.generate_product_metafields(product=product)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
@@ -302,27 +305,27 @@ def update_product(product, thread=None):
         for key in product_data.keys():
             setattr(shopify_product, key, product_data.get(key))
 
-        shopify_variant = ShopifyVariant()
-        for key in variant_data.keys():
-            setattr(shopify_variant, key, variant_data.get(key))
-        shopify_product.variants = [shopify_variant]
+        # shopify_variant = ShopifyVariant()
+        # for key in variant_data.keys():
+        #     setattr(shopify_variant, key, variant_data.get(key))
+        # shopify_product.variants = [shopify_variant]
 
         shopify_product.save()
 
-        for metafield in metafields:
-            shopify_metafield = ShopifyMetafield()
-            shopify_metafield.namespace = metafield['namespace']
-            shopify_metafield.key = metafield['key']
-            shopify_metafield.value = metafield['value']
+        # for metafield in metafields:
+        #     shopify_metafield = ShopifyMetafield()
+        #     shopify_metafield.namespace = metafield['namespace']
+        #     shopify_metafield.key = metafield['key']
+        #     shopify_metafield.value = metafield['value']
 
-            if metafield['key'] == "setparts":
-                shopify_metafield.type_type = 'json_string'
+        #     if metafield['key'] == "setparts":
+        #         shopify_metafield.type_type = 'json_string'
 
-            shopify_metafield.save()
+        #     shopify_metafield.save()
 
-            shopify_product.add_metafield(shopify_metafield)
+        #     shopify_product.add_metafield(shopify_metafield)
 
-        return (shopify_product, shopify_variant)
+        return shopify_product
 
 
 def delete_product(id, thread=None):
@@ -644,37 +647,42 @@ def create_customer(customer, thread=None):
 
         elif customer.email:
 
+            print(shopify_customer.errors.full_messages())
+
             del customer_data['phone']
             for address in customer_data["addresses"]:
                 if 'phone' in address:
                     del address['phone']
 
             shopify_customer = ShopifyCustomer(customer_data)
-            shopify_customer.save()
+            if shopify_customer.save():
 
-            metafield_data = {
-                "namespace": "custom",
-                "key": "customer_",
-                "value": customer.customer_no
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
+                metafield_data = {
+                    "namespace": "custom",
+                    "key": "customer_",
+                    "value": customer.customer_no
+                }
+                shopify_metafield = ShopifyMetafield(metafield_data)
+                shopify_customer.add_metafield(shopify_metafield)
 
-            metafield_data = {
-                "namespace": "custom",
-                "key": "customer_type",
-                "value": customer.type
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
+                metafield_data = {
+                    "namespace": "custom",
+                    "key": "customer_type",
+                    "value": customer.type
+                }
+                shopify_metafield = ShopifyMetafield(metafield_data)
+                shopify_customer.add_metafield(shopify_metafield)
 
-            metafield_data = {
-                "namespace": "custom",
-                "key": "trade_show_sales_representative",
-                "value": customer.comm
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
+                metafield_data = {
+                    "namespace": "custom",
+                    "key": "trade_show_sales_representative",
+                    "value": customer.comm
+                }
+                shopify_metafield = ShopifyMetafield(metafield_data)
+                shopify_customer.add_metafield(shopify_metafield)
+
+            else:
+                print(shopify_customer.errors.full_messages())
 
         return shopify_customer
 
@@ -764,6 +772,8 @@ def create_order(order, thread=None):
         #     shopify_order.email = order.customer.email
         # if order.customer.phone:
         #     shopify_order.phone = order.customer.phone
+
+        shopify_order.order_number = order.order_no
 
         shopify_order.customer = {
             "id": order.customer.customer_id
