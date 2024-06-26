@@ -169,6 +169,7 @@ class ProductAdmin(admin.ModelAdmin):
             'news_to_date',
             'product_attachment_file',
             'msrp',
+            'note',
             'additional_attributes',
         ]}),
         ("Variant", {'fields': [

@@ -83,6 +83,7 @@ class Processor:
             'country': 'country',
             'order_code': 'order_code',
             'dimensions': 'dimensions',
+            'denomination': 'denomination',
             'era': 'era',
             'variable': 'variable',
             'circulation': 'circulation',
@@ -99,6 +100,7 @@ class Processor:
             'news_to_date': 'news_to_date',
             'product_attachment_file': 'product_attachment_file',
             'msrp': 'msrp',
+            'note': 'notes',
 
             'images': 'images',
         }
@@ -176,6 +178,7 @@ class Processor:
             product.country = common.to_text(row.get('country'))
             product.order_code = common.to_text(row.get('order_code'))
             product.dimensions = common.to_text(row.get('dimensions'))
+            product.denomination = common.to_text(row.get('denomination'))
             product.era = common.to_text(row.get('era'))
             product.variable = common.to_text(row.get('variable'))
             product.circulation = common.to_text(row.get('circulation'))
@@ -194,6 +197,7 @@ class Processor:
             product.product_attachment_file = common.to_text(
                 row.get('product_attachment_file'))
             product.msrp = common.to_float(row.get('msrp'))
+            product.note = common.to_text(row.get('note'))
             product.additional_attributes = row['attributes']
 
             # Images

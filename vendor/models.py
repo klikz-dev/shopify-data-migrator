@@ -154,6 +154,8 @@ class Product(models.Model):
     product_attachment_file = models.CharField(
         max_length=2000, default=None, blank=True, null=True)
     msrp = models.FloatField(default=1, null=True, blank=True)
+    note = models.TextField(
+        max_length=2000, default=None, null=True, blank=True)
     additional_attributes = models.JSONField(
         default=dict, blank=True, null=True)
 

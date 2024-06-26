@@ -34,7 +34,7 @@ class Processor:
         metafield_keys = [
             'add_box',
             'show_component',
-            'retail',
+            'wholesale',
             'parent_sku',
             'length',
             'height',
@@ -56,6 +56,7 @@ class Processor:
             'news_from_date',
             'news_to_date',
             'msrp',
+            'note',
             'additional_attributes',
             'product_attachment_file'
         ]
@@ -142,6 +143,9 @@ class Processor:
         product_type = product.type.name
         product_tags = self.generate_product_tags(product=product)
 
+        if len(product.setparts.all()) > 0:
+            product_type = "Bundle"
+
         product_data = {
             "title": product.title.title(),
             "handle": common.to_handle(product.title),
@@ -151,14 +155,12 @@ class Processor:
             "tags": product_tags,
         }
 
-        print(product_data)
-
         return product_data
 
     def generate_variant_data(self, product, option=None):
 
         variant_data = {
-            'price': product.wholesale,
+            'price': product.retail,
             'sku': product.sku,
             'barcode': product.barcode,
             'weight': product.weight,
@@ -233,27 +235,22 @@ def create_product(product, thread=None):
             shopify_metafield.value = metafield['value']
             shopify_product.add_metafield(shopify_metafield)
 
-        return (shopify_product, shopify_variant)
+        return shopify_product
 
 
-def create_variable_product(variants, thread=None):
+def create_variable_product(product, variants, thread=None):
 
     processor = Processor(thread=thread)
 
-    product = variants.first()
+    first_variant = variants.first()
 
-    product_data = processor.generate_product_data(product=product)
     metafields = processor.generate_product_metafields(product=product)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        shopify_product = ShopifyProduct()
-        for key in product_data.keys():
-            setattr(shopify_product, key, product_data.get(key))
-
-        # shopify_product.options = [{"name": product.variable}]
-        shopify_product.options = [
-            {"name": "Grade" if "Window" in product.title else "Astrological Sign"}]
+        shopify_product = ShopifyProduct.find(product.product_id)
+        shopify_product.product_type = "Variable"
+        shopify_product.options = [{"name": first_variant.variable.title()}]
 
         shopify_variants = []
         for variant in variants:

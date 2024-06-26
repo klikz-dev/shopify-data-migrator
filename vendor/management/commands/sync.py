@@ -48,13 +48,13 @@ class Processor:
 
     def delete(self):
         # Delete All Orders
-        all_orders = shopify.list_orders()
+        # all_orders = shopify.list_orders()
 
-        def delete_order(index, order):
-            print(f"Deleting {order.id}")
-            shopify.delete_order(order.id, thread=index)
+        # def delete_order(index, order):
+        #     print(f"Deleting {order.id}")
+        #     shopify.delete_order(order.id, thread=index)
 
-        common.thread(rows=all_orders, function=delete_order)
+        # common.thread(rows=all_orders, function=delete_order)
 
         # Delete All Customers
         # all_customers = shopify.list_customers()
@@ -66,13 +66,20 @@ class Processor:
         # common.thread(rows=all_customers, function=delete_customer)
 
         # Delete All Products
-        # all_products = shopify.list_products()
+        all_products = shopify.list_products()
 
-        # def delete_product(index, product):
-        #     print(f"Deleting {product.id}")
-        #     shopify.delete_product(product.id, thread=index)
+        def delete_product(index, product):
+            print(f"Deleting {product.id}")
+            shopify.delete_product(product.id, thread=index)
 
-        # common.thread(rows=all_products, function=delete_product)
+        common.thread(rows=all_products, function=delete_product)
+
+        # Delete All Variants
+        # all_variant_ids = set(Product.objects.filter(
+        #     type__name="Variable").values_list('product_id', flat=True).distinct())
+        # for index, variant_product_id in enumerate(all_variant_ids):
+        #     print(f"Deleting {variant_product_id}")
+        #     shopify.delete_product(variant_product_id, thread=index)
 
         pass
 
@@ -98,11 +105,9 @@ class Processor:
                 else:
                     shopify_product = shopify.create_product(
                         product=product, thread=index)
-                    shopify_variant = shopify_product.variants[0]
 
                     if shopify_product.id:
                         product.product_id = shopify_product.id
-                        product.variant_id = shopify_variant.id
                         product.handle = shopify_product.handle
                         product.save()
 
@@ -131,15 +136,17 @@ class Processor:
         for index, parent_sku in enumerate(parent_skus):
             print(parent_sku)
 
+            product = Product.objects.get(sku=parent_sku)
+
             variants = Product.objects.filter(
                 parent_sku=parent_sku).filter(type__name="Variable")
 
             shopify_product = shopify.create_variable_product(
-                variants=variants, thread=index)
+                product=product, variants=variants, thread=index)
             shopify_variants = shopify_product.variants
 
-            print(shopify_product)
-            print(shopify_variants)
+            # print(shopify_product)
+            # print(shopify_variants)
 
             if shopify_product.id:
 
@@ -149,7 +156,7 @@ class Processor:
                     variant.variant_id = shopify_variant.id
                     variant.save()
 
-            self.image(variants.first())
+            # self.image(variants.first())
 
     def image(self, product):
         images = product.images.all()
