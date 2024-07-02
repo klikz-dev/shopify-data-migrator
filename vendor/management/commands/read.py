@@ -114,10 +114,17 @@ class Processor:
         for row in tqdm(rows):
 
             sku = common.to_text(row['sku'])
+            title = common.to_text(row['title'])
+            order_code = common.to_text(row.get('order_code'))
+
+            if not sku or not order_code:
+                continue
+            if not title:
+                title = order_code
 
             product = Product(sku=sku)
 
-            product.title = common.to_text(row['title'])
+            product.title = title
             product.handle = common.to_handle(product.title)
             product.description = common.to_text(row['description'])
 
@@ -176,7 +183,7 @@ class Processor:
             product.length = common.to_float(row.get('length'))
             product.height = common.to_float(row.get('height'))
             product.country = common.to_text(row.get('country'))
-            product.order_code = common.to_text(row.get('order_code'))
+            product.order_code = order_code
             product.dimensions = common.to_text(row.get('dimensions'))
             product.denomination = common.to_text(row.get('denomination'))
             product.era = common.to_text(row.get('era'))
@@ -464,22 +471,20 @@ class Processor:
         for row in tqdm(rows):
 
             order_no = common.to_int(row['order_no'])
+
             if not order_no:
                 continue
 
-            order_code = common.to_text(row['order_code'])
+            original_order_code = common.to_text(row['order_code'])
             customer_no = common.to_text(row['customer_no'])
 
-            if "(" in order_code:
-                circulation = f'({order_code.split("(")[1]}'
-                order_code = order_code.split("(")[0]
+            if "(" in original_order_code:
+                order_code = original_order_code.split("(")[0]
             else:
-                circulation = ""
-                order_code = order_code
+                order_code = original_order_code
 
             try:
-                product = Product.objects.filter(
-                    order_code=order_code, circulation=circulation).first()
+                product = Product.objects.filter(order_code=order_code).first()
             except Product.DoesNotExist:
                 continue
 

@@ -91,17 +91,19 @@ class Processor:
         def sync_product(index, product):
             try:
                 if product.product_id:
-                    shopify_product = shopify.update_product(
-                        product=product, thread=index)
-                    if shopify_product.handle:
-                        product.handle = shopify_product.handle
-                        product.save()
+                    # shopify_product = shopify.update_product(
+                    #     product=product, thread=index)
+                    # if shopify_product.handle:
+                    #     product.handle = shopify_product.handle
+                    #     product.save()
 
-                        print(
-                            f"{index}/{total} -- Product {product.handle} has been updated successfully.")
-                    else:
-                        print(
-                            f"Failed uploading - Product {product.handle}")
+                    #     print(
+                    #         f"{index}/{total} -- Product {product.handle} has been updated successfully.")
+                    # else:
+                    #     print(
+                    #         f"Failed uploading - Product {product.handle}")
+
+                    pass
 
                 else:
                     shopify_product = shopify.create_product(
@@ -148,7 +150,7 @@ class Processor:
             if shopify_product.id:
 
                 for shopify_variant in shopify_variants:
-                    variant = Product.objects.get(sku=shopify_variant.sku)
+                    variant = variants.filter(order_code=shopify_variant.sku).first()
                     variant.product_id = shopify_product.id
                     variant.variant_id = shopify_variant.id
                     variant.save()

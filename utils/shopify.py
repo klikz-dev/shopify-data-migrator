@@ -164,7 +164,7 @@ class Processor:
 
         variant_data = {
             'price': product.retail,
-            'sku': product.sku,
+            'sku': product.order_code,
             'barcode': product.barcode,
             'weight': product.weight,
             'weight_unit': 'lb',
@@ -229,14 +229,17 @@ def create_product(product, thread=None):
             setattr(shopify_variant, key, variant_data.get(key))
         shopify_product.variants = [shopify_variant]
 
-        shopify_product.save()
+        if shopify_product.save():
 
-        for metafield in metafields:
-            shopify_metafield = ShopifyMetafield()
-            shopify_metafield.namespace = metafield['namespace']
-            shopify_metafield.key = metafield['key']
-            shopify_metafield.value = metafield['value']
-            shopify_product.add_metafield(shopify_metafield)
+            for metafield in metafields:
+                shopify_metafield = ShopifyMetafield()
+                shopify_metafield.namespace = metafield['namespace']
+                shopify_metafield.key = metafield['key']
+                shopify_metafield.value = metafield['value']
+                shopify_product.add_metafield(shopify_metafield)
+
+        else:
+            print(shopify_product.errors.full_messages())
 
         return shopify_product
 
@@ -558,11 +561,11 @@ def update_inventory(inventory, thread=None):
         inventory_item_id = shopify_variant.inventory_item_id
 
         inventory_levels = ShopifyInventoryLevel.find(
-            inventory_item_ids=inventory_item_id, location_ids='97762935103')
+            inventory_item_ids=inventory_item_id, location_ids='66503311469')
 
         if inventory_levels:
             inventory_level = inventory_levels[0]
-            inventory_level.set(location_id='97762935103',
+            inventory_level.set(location_id='66503311469',
                                 inventory_item_id=inventory_item_id, available=inventory.quantity)
 
             return inventory_level
@@ -790,7 +793,7 @@ def create_order(order, thread=None):
             line_item = ShopifyLineItem({
                 "variant_id": variant_id,
                 "title": item.product.title,
-                "quantity": item.quantity,
+                "quantity": item.quantity if item.quantity >= 1 else 1,
                 "price": item.unit_price
             })
             line_items.append(line_item)
@@ -808,7 +811,16 @@ def create_order(order, thread=None):
             shopify_order.created_at = order.order_date.isoformat()
         shopify_order.fulfillment_status = "fulfilled"
 
-        shopify_order.save()
+        if shopify_order.save():
+            metafield_data = {
+                "namespace": "custom",
+                "key": "original_order_id",
+                "value": order.order_no
+            }
+            shopify_metafield = ShopifyMetafield(metafield_data)
+            shopify_order.add_metafield(shopify_metafield)
+        else:
+            print(shopify_order.errors.full_messages())
 
         return shopify_order
 
