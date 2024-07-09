@@ -56,6 +56,42 @@ class Processor:
         Vendor.objects.all().delete()
         Image.objects.all().delete()
 
+        # Read Product Details
+        details = {}
+
+        column_map = {
+            'sku': 'StockID',
+
+            'binrr': 'BINRR',
+            'binother': 'BINOther',
+            'binmr': 'BINMR',
+            'bing': 'BING',
+            'notation': 'NOTATION',
+        }
+
+        rows = feed.readExcel(
+            file_path=f"{FILEDIR}/ecc-product-details-master.xlsx",
+            column_map=column_map,
+            exclude=[]
+        )
+
+        for row in tqdm(rows):
+            sku = common.to_text(row['sku'])
+
+            binrr = common.to_text(row['binrr'])
+            binother = common.to_text(row['binother'])
+            binmr = common.to_text(row['binmr'])
+            bing = common.to_text(row['bing'])
+            notation = common.to_text(row['notation'])
+
+            details[sku] = {
+                'binrr': binrr,
+                'binother': binother,
+                'binmr': binmr,
+                'bing': bing,
+                'notation': notation
+            }
+
         # Get Product Feed
         column_map = {
             'sku': 'sku',
@@ -76,6 +112,7 @@ class Processor:
             'add_box': 'add_box',
             'show_component': 'show_component',
             'track_qty': 'track_qty',
+            'bulk_qty': 'bulk_qty',
 
             'parent_sku': 'parent_sku',
             'length': 'length',
@@ -204,7 +241,12 @@ class Processor:
             product.product_attachment_file = common.to_text(
                 row.get('product_attachment_file'))
             product.msrp = common.to_float(row.get('msrp'))
-            product.note = common.to_text(row.get('note'))
+            product.binrr = details.get(sku, {}).get('binrr', "")
+            product.binother = details.get(sku, {}).get('binother', "")
+            product.binmr = details.get(sku, {}).get('binmr', "")
+            product.bing = details.get(sku, {}).get('bing', "")
+            product.notation = details.get(sku, {}).get('notation', "")
+            product.bulk_qty = common.to_int(row['bulk_qty'])
             product.additional_attributes = row['attributes']
 
             # Images

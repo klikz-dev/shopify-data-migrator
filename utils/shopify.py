@@ -56,7 +56,12 @@ class Processor:
             'news_from_date',
             'news_to_date',
             'msrp',
-            'note',
+            'binrr',
+            'binother',
+            'binmr',
+            'bing',
+            'notation',
+            'bulk_qty',
             'additional_attributes',
             'product_attachment_file'
         ]
@@ -146,8 +151,8 @@ class Processor:
         product_type = product.type.name
         product_tags = self.generate_product_tags(product=product)
 
-        if len(product.setparts.all()) > 0:
-            product_type = "Bundle"
+        # if len(product.setparts.all()) > 0:
+        #     product_type = "Bundle"
 
         product_data = {
             "title": product.title.title(),
@@ -158,19 +163,22 @@ class Processor:
             "tags": product_tags,
         }
 
+        if product_type == "Off Website" or not product.status:
+            product_data['published_at'] = None
+
         return product_data
 
     def generate_variant_data(self, product, option=None):
 
         variant_data = {
             'price': product.retail,
-            'sku': product.order_code,
+            'sku': product.sku,
             'barcode': product.barcode,
             'weight': product.weight,
             'weight_unit': 'lb',
-            'inventory_quantity': product.quantity,
             'inventory_management': "shopify" if product.track_qty else None,
             'fulfillment_service': 'manual',
+            'inventory_quantity': product.quantity,
             'taxable': False,
         }
 
@@ -186,17 +194,20 @@ def list_products(thread=None):
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        all_shopify_products = []
+        all_shopify_product_ids = []
         shopify_products = ShopifyProduct.find(limit=250)
 
         while shopify_products:
 
-            all_shopify_products.extend(shopify_products)
+            print(f"Fetched {len(shopify_products)} Customers")
+
+            for shopify_product in shopify_products:
+                all_shopify_product_ids.append(shopify_product.id)
 
             shopify_products = shopify_products.has_next_page(
             ) and shopify_products.next_page() or []
 
-        return all_shopify_products
+        return all_shopify_product_ids
 
 
 def get_product(id, thread=None):
@@ -580,17 +591,20 @@ def list_customers(thread=None):
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        all_shopify_customers = []
+        all_shopify_customer_ids = []
         shopify_customers = ShopifyCustomer.find(limit=250)
 
         while shopify_customers:
 
-            all_shopify_customers.extend(shopify_customers)
+            print(f"Fetched {len(shopify_customers)} Customers")
+
+            for shopify_customer in shopify_customers:
+                all_shopify_customer_ids.append(shopify_customer.id)
 
             shopify_customers = shopify_customers.has_next_page(
             ) and shopify_customers.next_page() or []
 
-        return all_shopify_customers
+        return all_shopify_customer_ids
 
 
 def create_customer(customer, thread=None):
@@ -752,17 +766,23 @@ def list_orders(thread=None):
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        all_shopify_orders = []
+        all_shopify_order_ids = []
         shopify_orders = ShopifyOrder.find(limit=250, status="any")
 
         while shopify_orders:
 
-            all_shopify_orders.extend(shopify_orders)
+            print(f"Fetched {len(shopify_orders)} Orders.")
+
+            for shopify_order in shopify_orders:
+                all_shopify_order_ids.append(shopify_order.id)
 
             shopify_orders = shopify_orders.has_next_page(
             ) and shopify_orders.next_page() or []
 
-        return all_shopify_orders
+            if len(all_shopify_order_ids) > 5000:
+                break
+
+        return all_shopify_order_ids
 
 
 def create_order(order, thread=None):

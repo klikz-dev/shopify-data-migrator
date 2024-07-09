@@ -154,8 +154,12 @@ class Product(models.Model):
     product_attachment_file = models.CharField(
         max_length=2000, default=None, blank=True, null=True)
     msrp = models.FloatField(default=1, null=True, blank=True)
-    note = models.TextField(
-        max_length=2000, default=None, null=True, blank=True)
+    binrr = models.TextField(max_length=2000, default=None, null=True, blank=True)
+    binother = models.TextField(max_length=2000, default=None, null=True, blank=True)
+    binmr = models.TextField(max_length=2000, default=None, null=True, blank=True)
+    bing = models.TextField(max_length=2000, default=None, null=True, blank=True)
+    notation = models.TextField(max_length=2000, default=None, null=True, blank=True)
+    bulk_qty = models.IntegerField(default=0)
     additional_attributes = models.JSONField(
         default=dict, blank=True, null=True)
 

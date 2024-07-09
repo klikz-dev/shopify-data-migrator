@@ -48,31 +48,31 @@ class Processor:
 
     def delete(self):
         # Delete All Orders
-        all_orders = shopify.list_orders()
+        # all_order_ids = shopify.list_orders()
 
-        def delete_order(index, order):
-            print(f"Deleting {order.id}")
-            shopify.delete_order(order.id, thread=index)
+        # def delete_order(index, order_id):
+        #     print(f"Deleting {order_id}")
+        #     shopify.delete_order(order_id, thread=index)
 
-        common.thread(rows=all_orders, function=delete_order)
+        # common.thread(rows=all_order_ids, function=delete_order)
 
         # Delete All Customers
-        # all_customers = shopify.list_customers()
+        all_customer_ids = shopify.list_customers()
 
-        # def delete_customer(index, customer):
-        #     print(f"Deleting {customer.id}")
-        #     shopify.delete_customer(customer.id, thread=index)
+        def delete_customer(index, customer_id):
+            print(f"Deleting {customer_id}")
+            shopify.delete_customer(customer_id, thread=index)
 
-        # common.thread(rows=all_customers, function=delete_customer)
+        common.thread(rows=all_customer_ids, function=delete_customer)
 
         # Delete All Products
-        # all_products = shopify.list_products()
+        # all_product_ids = shopify.list_products()
 
-        # def delete_product(index, product):
-        #     print(f"Deleting {product.id}")
-        #     shopify.delete_product(product.id, thread=index)
+        # def delete_product(index, product_id):
+        #     print(f"Deleting {product_id}")
+        #     shopify.delete_product(product_id, thread=index)
 
-        # common.thread(rows=all_products, function=delete_product)
+        # common.thread(rows=all_product_ids, function=delete_product)
 
         # Delete All Variants
         # all_variant_ids = set(Product.objects.filter(
@@ -85,7 +85,7 @@ class Processor:
 
     def product(self):
 
-        products = Product.objects.all().filter(type__name="Simple")
+        products = Product.objects.all()
         total = len(products)
 
         def sync_product(index, product):
@@ -150,7 +150,8 @@ class Processor:
             if shopify_product.id:
 
                 for shopify_variant in shopify_variants:
-                    variant = variants.filter(order_code=shopify_variant.sku).first()
+                    variant = variants.filter(
+                        sku=shopify_variant.sku).first()
                     variant.product_id = shopify_product.id
                     variant.variant_id = shopify_variant.id
                     variant.save()
@@ -165,15 +166,16 @@ class Processor:
 
         def sync_image(index, image):
             try:
-                shopify_image = shopify.upload_image(
-                    product_id=product.product_id,
-                    image=f"{FILEDIR}/{image.path}",
-                    alt=product.title,
-                    thread=index
-                )
+                if image.path:
+                    shopify_image = shopify.upload_image(
+                        product_id=product.product_id,
+                        image=f"{FILEDIR}/{image.path}",
+                        alt=product.title,
+                        thread=index
+                    )
 
-                print(
-                    f"Uploaded Image {shopify_image.id} for Product {product.product_id}")
+                    print(
+                        f"Uploaded Image {shopify_image.id} for Product {product.product_id}")
 
             except Exception as e:
                 print(e)

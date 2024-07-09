@@ -169,7 +169,12 @@ class ProductAdmin(admin.ModelAdmin):
             'news_to_date',
             'product_attachment_file',
             'msrp',
-            'note',
+            'binrr',
+            'binother',
+            'binmr',
+            'bing',
+            'notation',
+            'bulk_qty',
             'additional_attributes',
         ]}),
         ("Variant", {'fields': [
