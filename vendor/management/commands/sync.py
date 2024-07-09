@@ -57,22 +57,22 @@ class Processor:
         # common.thread(rows=all_order_ids, function=delete_order)
 
         # Delete All Customers
-        all_customer_ids = shopify.list_customers()
+        # all_customer_ids = shopify.list_customers()
 
-        def delete_customer(index, customer_id):
-            print(f"Deleting {customer_id}")
-            shopify.delete_customer(customer_id, thread=index)
+        # def delete_customer(index, customer_id):
+        #     print(f"Deleting {customer_id}")
+        #     shopify.delete_customer(customer_id, thread=index)
 
-        common.thread(rows=all_customer_ids, function=delete_customer)
+        # common.thread(rows=all_customer_ids, function=delete_customer)
 
         # Delete All Products
-        # all_product_ids = shopify.list_products()
+        all_product_ids = shopify.list_products()
 
-        # def delete_product(index, product_id):
-        #     print(f"Deleting {product_id}")
-        #     shopify.delete_product(product_id, thread=index)
+        def delete_product(index, product_id):
+            print(f"Deleting {product_id}")
+            shopify.delete_product(product_id, thread=index)
 
-        # common.thread(rows=all_product_ids, function=delete_product)
+        common.thread(rows=all_product_ids, function=delete_product)
 
         # Delete All Variants
         # all_variant_ids = set(Product.objects.filter(

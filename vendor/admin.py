@@ -339,10 +339,13 @@ class OrderAdmin(admin.ModelAdmin):
         model = LineItem
         extra = 0
 
+        autocomplete_fields = [
+            'product',
+        ]
+
         fields = [
             'product',
             'unit_price',
-            'discount',
             'quantity',
         ]
 
@@ -352,23 +355,39 @@ class OrderAdmin(admin.ModelAdmin):
 
     fields = [
         'order_no',
-        'customer',
-        'shipping',
-        'shipping_method',
-        'total',
+        'order_total',
         'order_date',
+        'terms',
+        'terms_due_date',
+        'order_code',
+        'payment_method',
+        'card_type',
+        'approval',
+        'shipping_method',
+        'shipping_cost',
+        'order_memo',
+        'customer_no',
+        'company',
+        'amount_paid',
+        'po_number',
+        'tracking_number',
+        'sales_rep_robin',
         'order_id',
-        'note',
     ]
 
     list_display = [
-        'order_id',
         'order_no',
         'customer',
-        'shipping',
+        'shipping_cost',
         'shipping_method',
-        'total',
+        'order_total',
+        'amount_paid',
         'order_date',
+        'order_id',
+    ]
+
+    list_filter = [
+        'sales_rep_robin'
     ]
 
     search_fields = [
@@ -392,14 +411,14 @@ class LineItemAdmin(admin.ModelAdmin):
         'order',
         'product',
         'unit_price',
-        'discount',
         'quantity',
+        'item_note'
     ]
 
     list_display = [
         'order',
         'product',
         'unit_price',
-        'discount',
         'quantity',
+        'item_note'
     ]

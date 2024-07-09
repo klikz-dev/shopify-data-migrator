@@ -154,11 +154,16 @@ class Product(models.Model):
     product_attachment_file = models.CharField(
         max_length=2000, default=None, blank=True, null=True)
     msrp = models.FloatField(default=1, null=True, blank=True)
-    binrr = models.TextField(max_length=2000, default=None, null=True, blank=True)
-    binother = models.TextField(max_length=2000, default=None, null=True, blank=True)
-    binmr = models.TextField(max_length=2000, default=None, null=True, blank=True)
-    bing = models.TextField(max_length=2000, default=None, null=True, blank=True)
-    notation = models.TextField(max_length=2000, default=None, null=True, blank=True)
+    binrr = models.TextField(
+        max_length=2000, default=None, null=True, blank=True)
+    binother = models.TextField(
+        max_length=2000, default=None, null=True, blank=True)
+    binmr = models.TextField(
+        max_length=2000, default=None, null=True, blank=True)
+    bing = models.TextField(
+        max_length=2000, default=None, null=True, blank=True)
+    notation = models.TextField(
+        max_length=2000, default=None, null=True, blank=True)
     bulk_qty = models.IntegerField(default=0)
     additional_attributes = models.JSONField(
         default=dict, blank=True, null=True)
@@ -185,7 +190,8 @@ class Product(models.Model):
 
 
 class Image(models.Model):
-    path = models.CharField(max_length=1000, default=None, blank=False, null=False)
+    path = models.CharField(
+        max_length=1000, default=None, blank=False, null=False)
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE, blank=False, null=False)
 
@@ -244,15 +250,34 @@ class Order(models.Model):
     customer = models.ForeignKey(
         Customer, related_name='orders', on_delete=models.CASCADE, blank=False, null=False)
 
-    shipping = models.FloatField(default=0, null=False, blank=False)
-    shipping_method = models.CharField(
-        max_length=2000, default=None, null=True, blank=True)
-    total = models.FloatField(default=0, null=False, blank=False)
-
+    order_total = models.FloatField(default=0, null=False, blank=False)
     order_date = models.DateField(null=True, blank=True)
-
-    note = models.CharField(
-        max_length=2000, default=None, null=True, blank=True)
+    terms = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    terms_due_date = models.DateField(null=True, blank=True)
+    order_code = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    payment_method = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    card_type = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    approval = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    shipping_method = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    shipping_cost = models.FloatField(default=0, null=False, blank=False)
+    order_memo = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    customer_no = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    company = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    amount_paid = models.FloatField(default=0, null=False, blank=False)
+    po_number = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    tracking_number = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    sales_rep_robin = models.BooleanField(default=False)
 
     order_id = models.CharField(
         max_length=200, default=None, null=True, blank=True)
@@ -269,8 +294,11 @@ class LineItem(models.Model):
         Product, related_name='lineItems', on_delete=models.CASCADE, blank=False, null=False)
 
     unit_price = models.FloatField(default=0, null=False, blank=False)
-    discount = models.FloatField(default=0, null=False, blank=False)
+
     quantity = models.IntegerField(default=1, null=False, blank=False)
+
+    item_note = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
 
     def __str__(self):
         return self.order.order_no

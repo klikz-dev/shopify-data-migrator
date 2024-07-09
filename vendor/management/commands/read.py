@@ -489,23 +489,32 @@ class Processor:
         Order.objects.all().delete()
 
         column_map = {
-            'order_no': 'ORDERid',
-            'shipping': 'TB_SHIP',
-            'shipping_method': 'SHIPLIST',
-            'total': 'AMT_PAID',
-            'order_date': 'ODR_DATE',
-            'note': 'OrderMemo',
-
-            'unit_price': 'IT_UNLIST',
-            'discount': 'DISCOUNT',
-            'quantity': 'QUANTO',
-
-            'customer_no': 'tblCMS_CUSTNUM',
-            'order_code': 'ITEM',
+            'order_no': 'Order Number',
+            'order_date': 'Order Date',
+            'order_total': 'Order Total',
+            'terms': 'Terms',
+            'terms_due_date': 'Terms Due Date',
+            'sku': 'SKU #',
+            'order_code': 'Order Code',
+            'quantity': 'Quantity',
+            'unit_price': 'Unit Price',
+            'item_note': 'Item Note',
+            'payment_method': 'Payment Method',
+            'card_type': 'Card Type',
+            'approval': 'APPROVAL',
+            'shipping_method': 'Shipping Method',
+            'shipping_cost': 'Shipping cost',
+            'order_memo': 'Order Memo',
+            'customer_no': 'Customer Number',
+            'company': 'Company',
+            'amount_paid': 'Amount Paid',
+            'po_number': 'PO Number',
+            'tracking_number': 'tracking_number',
+            'sales_rep_robin': 'Sales Rep Robin',
         }
 
         rows = feed.readExcel(
-            file_path=f"{FILEDIR}/ecc-orders-master.xlsx",
+            file_path=f"{FILEDIR}/ecc-order-history-master.xlsx",
             column_map=column_map,
             exclude=[]
         )
@@ -513,24 +522,15 @@ class Processor:
         for row in tqdm(rows):
 
             order_no = common.to_int(row['order_no'])
+            customer_no = common.to_text(row['customer_no'])
+            sku = common.to_text(row['sku'])
 
             if not order_no:
                 continue
 
-            original_order_code = common.to_text(row['order_code'])
-            customer_no = common.to_text(row['customer_no'])
-
-            if "(" in original_order_code:
-                order_code = original_order_code.split("(")[0]
-            else:
-                order_code = original_order_code
-
             try:
-                product = Product.objects.filter(order_code=order_code).first()
+                product = Product.objects.get(sku=sku)
             except Product.DoesNotExist:
-                continue
-
-            if not product:
                 continue
 
             try:
@@ -542,11 +542,23 @@ class Processor:
                 order_no=order_no,
                 defaults={
                     'customer': customer,
-                    'shipping': common.to_float(row['shipping']),
-                    'shipping_method': common.to_text(row['shipping_method']),
-                    'total': common.to_float(row['total']),
-                    'order_date': row['order_date'],
-                    'note': common.to_text(row['note']),
+                    'order_date': row.get('order_date'),
+                    'order_total': common.to_float(row.get('order_total')),
+                    'terms': common.to_text(row.get('terms')),
+                    'terms_due_date': common.to_date(row.get('terms_due_date')),
+                    'order_code': common.to_text(row.get('order_code')),
+                    'payment_method': common.to_text(row.get('payment_method')),
+                    'card_type': common.to_text(row.get('card_type')),
+                    'approval': common.to_text(row.get('approval')),
+                    'shipping_method': common.to_text(row.get('shipping_method')),
+                    'shipping_cost': common.to_float(row.get('shipping_cost')),
+                    'order_memo': common.to_text(row.get('order_memo')),
+                    'customer_no': common.to_text(row.get('customer_no')),
+                    'company': common.to_text(row.get('company')),
+                    'amount_paid': common.to_float(row.get('amount_paid')),
+                    'po_number': common.to_text(row.get('po_number')),
+                    'tracking_number': common.to_text(row.get('tracking_number')),
+                    'sales_rep_robin': common.to_text(row.get('sales_rep_robin')) == True
                 }
             )
 
@@ -554,6 +566,6 @@ class Processor:
                 order=order,
                 product=product,
                 unit_price=common.to_float(row['unit_price']),
-                discount=common.to_float(row['discount']),
                 quantity=common.to_int(row['quantity']),
+                item_note=common.to_text(row['amount_paid']),
             )
