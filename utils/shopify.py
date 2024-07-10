@@ -187,6 +187,60 @@ class Processor:
 
         return variant_data
 
+    def generate_order_metafields(self, order):
+        metafield_keys = [
+            'order_no',
+            'terms',
+            'terms_due_date',
+            'payment_method',
+            'card_type',
+            'approval',
+            'shipping_method',
+            'order_memo',
+            'company',
+            'po_number',
+            'tracking_number',
+            'sales_rep_robin',
+        ]
+
+        metafields = []
+        for metafield_key in metafield_keys:
+            metafield_value = getattr(order, metafield_key)
+
+            if metafield_key == "terms_due_date":
+                if metafield_value:
+                    metafield = {
+                        "namespace": "custom",
+                        "key": metafield_key,
+                        "value": metafield_value.isoformat()
+                    }
+                else:
+                    continue
+
+            else:
+                metafield = {
+                    "namespace": "custom",
+                    "key": metafield_key,
+                    "value": metafield_value
+                }
+
+            metafields.append(metafield)
+
+        # Item Note
+        item_notes = []
+        for lineItem in order.lineItems.all():
+            if lineItem.item_note:
+                item_notes.append(lineItem.item_note)
+
+        item_note_metafield = {
+            "namespace": "custom",
+            "key": 'item_note',
+            "value": ", ".join(item_notes),
+        }
+        metafields.append(item_note_metafield)
+
+        return metafields
+
 
 def list_products(thread=None):
 
@@ -562,27 +616,30 @@ def delete_collection(id, thread=None):
         return success
 
 
-def update_inventory(inventory, thread=None):
+def update_inventory(product, thread=None):
 
     processor = Processor(thread=thread)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        shopify_variant = ShopifyVariant.find(inventory.variant.id)
-        inventory_item_id = shopify_variant.inventory_item_id
+        shopify_product = ShopifyProduct.find(product.product_id)
+        for shopify_variant in shopify_product.variants:
+            inventory_item_id = shopify_variant.inventory_item_id
 
-        inventory_levels = ShopifyInventoryLevel.find(
-            inventory_item_ids=inventory_item_id, location_ids='66503311469')
+            inventory_levels = ShopifyInventoryLevel.find(
+                inventory_item_ids=inventory_item_id, location_ids='66503311469')
 
-        if inventory_levels:
-            inventory_level = inventory_levels[0]
-            inventory_level.set(location_id='66503311469',
-                                inventory_item_id=inventory_item_id, available=inventory.quantity)
+            if inventory_levels:
+                inventory_level = inventory_levels[0]
+                inventory_level.set(location_id='66503311469',
+                                    inventory_item_id=inventory_item_id, available=product.quantity)
 
-            return inventory_level
+                print(f"Product {product.product_id} Inventory updated to {product.quantity}")
 
-        else:
-            return None
+            else:
+                print(f"Failed updating inventory for product {product.product_id}")
+
+        return
 
 
 def list_customers(thread=None):
@@ -788,6 +845,8 @@ def list_orders(thread=None):
 def create_order(order, thread=None):
     processor = Processor(thread=thread)
 
+    metafields = processor.generate_order_metafields(order=order)
+
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
         shopify_order = ShopifyOrder()
@@ -796,7 +855,7 @@ def create_order(order, thread=None):
         # if order.customer.phone:
         #     shopify_order.phone = order.customer.phone
 
-        shopify_order.order_number = order.order_no
+        shopify_order.po_number = order.order_no
 
         shopify_order.customer = {
             "id": order.customer.customer_id
@@ -820,25 +879,30 @@ def create_order(order, thread=None):
 
         shopify_order.line_items = line_items
 
-        shopify_order.total_price = order.total
         shopify_order.shipping_lines = [{
             "title": order.shipping_method,
             "code": order.shipping_method,
-            "price": order.shipping
+            "price": order.shipping_cost
         }]
+
+        shopify_order.total_price = order.order_total
+        shopify_order.total_discounts = order.order_total - \
+            order.amount_paid if order.order_total > order.amount_paid else 0
 
         if order.order_date:
             shopify_order.created_at = order.order_date.isoformat()
+
         shopify_order.fulfillment_status = "fulfilled"
 
         if shopify_order.save():
-            metafield_data = {
-                "namespace": "custom",
-                "key": "original_order_id",
-                "value": order.order_no
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_order.add_metafield(shopify_metafield)
+
+            for metafield in metafields:
+                shopify_metafield = ShopifyMetafield()
+                shopify_metafield.namespace = metafield['namespace']
+                shopify_metafield.key = metafield['key']
+                shopify_metafield.value = metafield['value']
+                shopify_order.add_metafield(shopify_metafield)
+
         else:
             print(shopify_order.errors.full_messages())
 

@@ -67,6 +67,8 @@ class Processor:
             'binmr': 'BINMR',
             'bing': 'BING',
             'notation': 'NOTATION',
+
+            'quantity': 'BINH',
         }
 
         rows = feed.readExcel(
@@ -84,12 +86,15 @@ class Processor:
             bing = common.to_text(row['bing'])
             notation = common.to_text(row['notation'])
 
+            quantity = common.to_int(row['quantity'])
+
             details[sku] = {
                 'binrr': binrr,
                 'binother': binother,
                 'binmr': binmr,
                 'bing': bing,
-                'notation': notation
+                'notation': notation,
+                'quantity': quantity
             }
 
         # Get Product Feed
@@ -159,7 +164,10 @@ class Processor:
             if not title:
                 title = order_code
 
-            product = Product(sku=sku)
+            try:
+                product = Product.objects.get(sku=sku)
+            except Product.DoesNotExist:
+                product = Product(sku=sku)
 
             product.title = title
             product.handle = common.to_handle(product.title)
@@ -204,8 +212,7 @@ class Processor:
             product.retail = common.to_float(row['retail'])
 
             # Inventory & Shipping
-            product.quantity = 1000 if common.to_text(
-                row['stock']) == "instock" else 0
+            product.quantity = details.get(sku, {}).get('quantity', 0)
             product.weight = common.to_float(row['weight'])
 
             # Status
@@ -252,7 +259,8 @@ class Processor:
             # Images
             images = common.to_text(row['images']).split("|")
             for image in images:
-                Image.objects.create(product=product, path=image)
+                if image:
+                    Image.objects.create(product=product, path=image)
 
             # Write Feed
             product.save()
@@ -371,8 +379,8 @@ class Processor:
             country = common.to_country(country_code)
             phone = common.to_phone(country, phone)
 
-            if not email and not phone:
-                continue
+            # if not email and not phone:
+            #     continue
 
             customer = Customer(
                 customer_no=customer_no,
@@ -567,5 +575,5 @@ class Processor:
                 product=product,
                 unit_price=common.to_float(row['unit_price']),
                 quantity=common.to_int(row['quantity']),
-                item_note=common.to_text(row['amount_paid']),
+                item_note=common.to_text(row['item_note']),
             )

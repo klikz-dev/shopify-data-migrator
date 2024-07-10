@@ -35,6 +35,9 @@ class Command(BaseCommand):
         if "collection" in options['functions']:
             processor.collection()
 
+        if "inventory" in options['functions']:
+            processor.inventory()
+
 
 class Processor:
     def __init__(self):
@@ -48,22 +51,22 @@ class Processor:
 
     def delete(self):
         # Delete All Orders
-        # all_order_ids = shopify.list_orders()
+        all_order_ids = shopify.list_orders()
 
-        # def delete_order(index, order_id):
-        #     print(f"Deleting {order_id}")
-        #     shopify.delete_order(order_id, thread=index)
+        def delete_order(index, order_id):
+            print(f"Deleting {order_id}")
+            shopify.delete_order(order_id, thread=index)
 
-        # common.thread(rows=all_order_ids, function=delete_order)
+        common.thread(rows=all_order_ids, function=delete_order)
 
         # Delete All Customers
-        # all_customer_ids = shopify.list_customers()
+        all_customer_ids = shopify.list_customers()
 
-        # def delete_customer(index, customer_id):
-        #     print(f"Deleting {customer_id}")
-        #     shopify.delete_customer(customer_id, thread=index)
+        def delete_customer(index, customer_id):
+            print(f"Deleting {customer_id}")
+            shopify.delete_customer(customer_id, thread=index)
 
-        # common.thread(rows=all_customer_ids, function=delete_customer)
+        common.thread(rows=all_customer_ids, function=delete_customer)
 
         # Delete All Products
         all_product_ids = shopify.list_products()
@@ -85,7 +88,7 @@ class Processor:
 
     def product(self):
 
-        products = Product.objects.all()
+        products = Product.objects.all().filter(sku="7233")
         total = len(products)
 
         def sync_product(index, product):
@@ -118,6 +121,8 @@ class Processor:
 
                         print(
                             f"{index}/{total} -- Product {shopify_product.id} has been created successfully.")
+
+                        shopify.update_inventory(product=product, thread=index)
                     else:
                         print(
                             f"Failed uploading - Product {product.handle}")
@@ -126,10 +131,10 @@ class Processor:
                 print(e)
                 return
 
-        # for index, product in enumerate(products):
-        #     sync_product(index, product)
+        for index, product in enumerate(products):
+            sync_product(index, product)
 
-        common.thread(rows=products, function=sync_product)
+        # common.thread(rows=products, function=sync_product)
 
     def variant(self):
 
@@ -196,6 +201,7 @@ class Processor:
             if customer.customer_id:
                 shopify_customer = shopify.update_customer(
                     customer=customer, thread=index)
+                pass
             else:
                 shopify_customer = shopify.create_customer(
                     customer=customer, thread=index)
@@ -254,3 +260,26 @@ class Processor:
 
             print(
                 f"Collection {shopify_collection.id} has been setup successfully")
+
+    def inventory(self):
+
+        products = Product.objects.all()
+        total = len(products)
+
+        def sync_inventory(index, product):
+            try:
+                if product.product_id:
+                    shopify.update_inventory(
+                        product=product, thread=index)
+
+                    print(
+                        f"{index}/{total} -- Product Inventory for {product.product_id} has been updated")
+
+            except Exception as e:
+                print(e)
+                return
+
+        for index, product in enumerate(products):
+            sync_inventory(index, product)
+
+        # common.thread(rows=products, function=sync_inventory)

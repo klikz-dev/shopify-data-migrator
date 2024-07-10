@@ -347,6 +347,7 @@ class OrderAdmin(admin.ModelAdmin):
             'product',
             'unit_price',
             'quantity',
+            'item_note',
         ]
 
     autocomplete_fields = [
@@ -355,6 +356,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     fields = [
         'order_no',
+        'customer',
         'order_total',
         'order_date',
         'terms',
