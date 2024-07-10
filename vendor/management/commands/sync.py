@@ -88,7 +88,7 @@ class Processor:
 
     def product(self):
 
-        products = Product.objects.all().filter(sku="7233")
+        products = Product.objects.all().exclude(type__name="Variable")
         total = len(products)
 
         def sync_product(index, product):
