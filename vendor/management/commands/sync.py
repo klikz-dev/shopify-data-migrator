@@ -131,10 +131,10 @@ class Processor:
                 print(e)
                 return
 
-        for index, product in enumerate(products):
-            sync_product(index, product)
+        # for index, product in enumerate(products):
+        #     sync_product(index, product)
 
-        # common.thread(rows=products, function=sync_product)
+        common.thread(rows=products, function=sync_product)
 
     def variant(self):
 
