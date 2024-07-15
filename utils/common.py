@@ -2335,7 +2335,7 @@ def thread(rows, function):
 
 def to_text(text):
     if (isinstance(text, int) or (isinstance(text, float)) and text.is_integer()):
-        return int(text)
+        return str(int(text))
 
     if text:
         text = re.sub(r'[^\x20-\x7E]+', '', str(text))

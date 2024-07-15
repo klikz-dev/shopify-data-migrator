@@ -2,7 +2,6 @@ from django.core.management.base import BaseCommand
 
 from pathlib import Path
 from tqdm import tqdm
-import pycountry
 
 from utils import common, feed
 
@@ -72,9 +71,10 @@ class Processor:
         }
 
         rows = feed.readExcel(
-            file_path=f"{FILEDIR}/ecc-product-details-master.xlsx",
+            file_path=f"{FILEDIR}/ecc-inventory-master.xlsx",
             column_map=column_map,
-            exclude=[]
+            exclude=[],
+            get_other_attributes=False
         )
 
         for row in tqdm(rows):
@@ -217,10 +217,9 @@ class Processor:
 
             # Status
             product.status = common.to_text(row['status']) == "publish"
-            product.add_box = common.to_text(row['add_box']) == True
-            product.show_component = common.to_text(
-                row['show_component']) == True
-            product.track_qty = common.to_text(row['track_qty']) == True
+            product.add_box = row['add_box'] == True
+            product.show_component = row['show_component'] == True
+            product.track_qty = row['track_qty'] == True
 
             # Attributes
             product.parent_sku = common.to_text(row.get('parent_sku'))
@@ -486,7 +485,7 @@ class Processor:
                     'amount_paid': common.to_float(row.get('amount_paid')),
                     'po_number': common.to_text(row.get('po_number')),
                     'tracking_number': common.to_text(row.get('tracking_number')),
-                    'sales_rep_robin': common.to_text(row.get('sales_rep_robin')) == True
+                    'sales_rep_robin': row.get('sales_rep_robin') == True
                 }
             )
 

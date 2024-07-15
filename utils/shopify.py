@@ -253,7 +253,7 @@ def list_products(thread=None):
 
         while shopify_products:
 
-            print(f"Fetched {len(shopify_products)} Customers")
+            print(f"Fetched {len(shopify_products)} Products")
 
             for shopify_product in shopify_products:
                 all_shopify_product_ids.append(shopify_product.id)
@@ -634,10 +634,12 @@ def update_inventory(product, thread=None):
                 inventory_level.set(location_id='66503311469',
                                     inventory_item_id=inventory_item_id, available=product.quantity)
 
-                print(f"Product {product.product_id} Inventory updated to {product.quantity}")
+                print(
+                    f"Product {product.product_id} Inventory updated to {product.quantity}")
 
             else:
-                print(f"Failed updating inventory for product {product.product_id}")
+                print(
+                    f"Failed updating inventory for product {product.product_id}")
 
         return
 
@@ -835,9 +837,6 @@ def list_orders(thread=None):
 
             shopify_orders = shopify_orders.has_next_page(
             ) and shopify_orders.next_page() or []
-
-            if len(all_shopify_order_ids) > 5000:
-                break
 
         return all_shopify_order_ids
 

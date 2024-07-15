@@ -1,7 +1,7 @@
 import openpyxl
 
 
-def readExcel(file_path: str, column_map: dict, exclude: dict, header_id=1):
+def readExcel(file_path: str, column_map: dict, exclude: dict, header_id=1, get_other_attributes=True):
     wb = openpyxl.load_workbook(file_path, data_only=True)
     sheet = wb.active
 
@@ -31,9 +31,10 @@ def readExcel(file_path: str, column_map: dict, exclude: dict, header_id=1):
                     field_name in columns.items() if col_idx < len(row)}
 
         # Detect and add attributes not explicitly mapped
-        attributes = {header[idx]: col for idx, col in enumerate(row)
-                      if col and header[idx] not in column_map.values() and header[idx].strip() not in exclude}
-        row_data['attributes'] = attributes
+        if get_other_attributes:
+            attributes = {header[idx]: col for idx, col in enumerate(row)
+                          if col and header[idx] not in column_map.values() and header[idx].strip() not in exclude}
+            row_data['attributes'] = attributes
 
         data.append(row_data)
 
