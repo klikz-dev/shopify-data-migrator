@@ -191,7 +191,7 @@ class Product(models.Model):
 
 class Image(models.Model):
     path = models.CharField(
-        max_length=1000, default=None, blank=False, null=False)
+        max_length=2000, default=None, blank=False, null=False)
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE, blank=False, null=False)
 
@@ -232,9 +232,17 @@ class Customer(models.Model):
     tags = models.CharField(
         max_length=200, default=None, null=True, blank=True)
 
-    type = models.CharField(
+    customer_type = models.CharField(
         max_length=200, default=None, null=True, blank=True)
-    comm = models.BooleanField(default=False)
+    trade_show_sales_representative = models.BooleanField(default=False)
+    payment_terms = models.IntegerField(default=None, null=True, blank=True)
+    vat_no = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    orig_ad = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    check_dropship = models.BooleanField(default=False)
+    additional_attributes = models.JSONField(
+        default=dict, blank=True, null=True)
 
     customer_id = models.CharField(
         max_length=200, default=None, null=True, blank=True)

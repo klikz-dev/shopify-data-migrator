@@ -277,16 +277,6 @@ class Processor:
             'order_code': 'order_code',
             'title': 'title',
             'parent_order_code': 'parent_order_code',
-            # 'metal': 'metal',
-            # 'diameter': 'diameter',
-            # 'circulation': 'circulation',
-            # 'assoc': 'assoc',
-            # 'price': 'price',
-            # 'obverse_detail': 'obverse_detail',
-            # 'reverse_detail': 'reverse_detail',
-            # 'info': 'full_info',
-            # 'country': 'country',
-            # 'unit_weight': 'unit_weight',
         }
 
         rows = feed.readExcel(
@@ -310,16 +300,6 @@ class Processor:
                     'order_code': common.to_text(row.get('order_code')),
                     'title': common.to_text(row.get('title')),
                     'parent_order_code': common.to_text(row.get('parent_order_code')),
-                    # 'metal': common.to_text(row.get('metal')),
-                    # 'diameter': common.to_text(row.get('diameter')),
-                    # 'circulation': common.to_text(row.get('circulation')),
-                    # 'assoc': common.to_text(row.get('assoc')),
-                    # 'price': common.to_float(row.get('price')),
-                    # 'obverse_detail': common.to_text(row.get('obverse_detail')),
-                    # 'reverse_detail': common.to_text(row.get('reverse_detail')),
-                    # 'info': common.to_text(row.get('info')),
-                    # 'country': common.to_text(row.get('country')),
-                    # 'unit_weight': common.to_float(row.get('unit_weight')),
                 }
             )
 
@@ -342,7 +322,13 @@ class Processor:
             'zip': 'ZIPCODE',
             'country': 'COUNTRY',
             'note': 'COMMENT',
-            'comm': 'chkComm'
+
+            'trade_show_sales_representative': 'chkComm',
+            'payment_terms': 'DUE_DAYS',
+            'vat_no': 'vatNumber',
+            'orig_ad': 'ORIG_AD',
+            'check_dropship': 'chkCustDropShip',
+            'additional_attributes': 'additional_attributes',
         }
 
         rows = feed.readExcel(
@@ -358,46 +344,33 @@ class Processor:
             if customer_no == 0:
                 continue
 
-            email = common.to_text(row.get('email'))
-            phone = common.to_text(row.get('phone'))
+            try:
+                customer = Customer.objects.get(customer_no=customer_no)
+            except Customer.DoesNotExist:
+                customer = Customer(customer_no=customer_no)
 
-            first_name = common.to_text(row.get('first_name'))
-            last_name = common.to_text(row.get('last_name'))
-            company = common.to_text(row.get('company'))
+            customer.email = common.to_text(row.get('email'))
+            customer.first_name = common.to_text(row.get('first_name'))
+            customer.last_name = common.to_text(row.get('last_name'))
+            customer.company = common.to_text(row.get('company'))
+            customer.address1 = common.to_text(row.get('address1'))
+            customer.address2 = common.to_text(row.get('address2'))
+            customer.city = common.to_text(row.get('city'))
+            customer.state = common.to_text(row.get('state'))
+            customer.zip = common.to_text(row.get('zip'))
+            customer.country = common.to_country(
+                common.to_text(row.get('country')))
+            customer.phone = common.to_phone(
+                customer.country, common.to_text(row.get('phone')))
+            customer.note = common.to_text(row.get('note'))
 
-            address1 = common.to_text(row.get('address1'))
-            address2 = common.to_text(row.get('address2'))
-            city = common.to_text(row.get('city'))
-            state = common.to_text(row.get('state'))
-            zip = common.to_text(row.get('zip'))
-            country_code = common.to_text(row.get('country'))
-
-            note = common.to_text(row.get('note'))
-            comm = row.get('comm')
-
-            # fine-tune
-            country = common.to_country(country_code)
-            phone = common.to_phone(country, phone)
-
-            # if not email and not phone:
-            #     continue
-
-            customer = Customer(
-                customer_no=customer_no,
-                email=email,
-                phone=phone,
-                first_name=first_name,
-                last_name=last_name,
-                company=company,
-                address1=address1,
-                address2=address2,
-                city=city,
-                state=state,
-                zip=zip,
-                country=country,
-                note=note,
-                comm=comm,
-            )
+            customer.trade_show_sales_representative = row.get(
+                'trade_show_sales_representative')
+            customer.payment_terms = common.to_int(row.get('payment_terms'))
+            customer.vat_no = common.to_text(row.get('vat_no'))
+            customer.orig_ad = common.to_text(row.get('orig_ad'))
+            customer.check_dropship = row.get('check_dropship')
+            customer.additional_attributes = row.get('attributes')
 
             customer.save()
 
@@ -406,17 +379,7 @@ class Processor:
         column_map = {
             'customer_no': 'ECC Customer Number',
             'email': 'User Email',
-            'phone': 'Billing Phone',
-            'first_name': 'First Name',
-            'last_name': 'Last Name',
-            'company': 'Shipping Company',
-            'address1': 'Shipping Address 1',
-            'address2': 'Shipping Address 2',
-            'city': 'Shipping City',
-            'state': 'Shipping State',
-            'zip': 'Shipping Postcode',
-            'country': 'Shipping Country',
-            'type': 'Type',
+            'customer_type': 'Type',
         }
 
         rows = feed.readExcel(
@@ -442,53 +405,10 @@ class Processor:
             except:
                 continue
 
-            if email:
-                customer.email = email
-
-            phone = common.to_text(row.get('phone'))
-            if phone:
-                customer.phone = phone
-
-            first_name = common.to_text(row.get('first_name'))
-            if first_name:
-                customer.first_name = phone
-
-            last_name = common.to_text(row.get('last_name'))
-            if last_name:
-                customer.last_name = last_name
-
-            company = common.to_text(row.get('company'))
-            if company:
-                customer.company = company
-
-            address1 = common.to_text(row.get('address1'))
-            if address1:
-                customer.address1 = address1
-
-            address2 = common.to_text(row.get('address2'))
-            if address2:
-                customer.address2 = address2
-
-            city = common.to_text(row.get('city'))
-            if city:
-                customer.city = city
-
-            state = common.to_text(row.get('state'))
-            if state:
-                customer.state = state
-
-            zip = common.to_text(row.get('zip'))
-            if zip:
-                customer.zip = zip
-
-            country = common.to_text(row.get('country'))
-            if country:
-                customer.country = country
-
-            type = common.to_text(row.get('type')).lower()
-            if type:
-                customer.type = type
-                customer.tags = type
+            customer_type = common.to_text(row.get('customer_type')).lower()
+            if customer_type:
+                customer.customer_type = customer_type
+                customer.tags = customer_type
 
             customer.save()
 

@@ -279,25 +279,25 @@ class ImageAdmin(admin.ModelAdmin):
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
 
-    fields = [
-        'customer_no',
-        'email',
-        'phone',
-        'first_name',
-        'last_name',
-        'company',
-        'address1',
-        'address2',
-        'city',
-        'state',
-        'zip',
-        'country',
-        'note',
-        'tags',
-        'type',
-        'comm',
-        'customer_id',
-    ]
+    # fields = [
+    #     'customer_no',
+    #     'email',
+    #     'phone',
+    #     'first_name',
+    #     'last_name',
+    #     'company',
+    #     'address1',
+    #     'address2',
+    #     'city',
+    #     'state',
+    #     'zip',
+    #     'country',
+    #     'note',
+    #     'tags',
+    #     'type',
+    #     'comm',
+    #     'customer_id',
+    # ]
 
     list_display = [
         'customer_no',
@@ -310,14 +310,11 @@ class CustomerAdmin(admin.ModelAdmin):
         'state',
         'zip',
         'country',
-        'type',
-        'comm',
         'customer_id'
     ]
 
     list_filter = [
-        'type',
-        'comm',
+        'customer_type',
         'country',
         'tags'
     ]
