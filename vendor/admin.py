@@ -351,29 +351,6 @@ class OrderAdmin(admin.ModelAdmin):
         'customer',
     ]
 
-    fields = [
-        'order_no',
-        'customer',
-        'order_total',
-        'order_date',
-        'terms',
-        'terms_due_date',
-        'order_code',
-        'payment_method',
-        'card_type',
-        'approval',
-        'shipping_method',
-        'shipping_cost',
-        'order_memo',
-        'customer_no',
-        'company',
-        'amount_paid',
-        'po_number',
-        'tracking_number',
-        'sales_rep_robin',
-        'order_id',
-    ]
-
     list_display = [
         'order_no',
         'customer',

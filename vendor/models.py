@@ -286,6 +286,10 @@ class Order(models.Model):
     tracking_number = models.CharField(
         max_length=200, default=None, null=True, blank=True)
     sales_rep_robin = models.BooleanField(default=False)
+    check_number = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    additional_attributes = models.JSONField(
+        default=dict, blank=True, null=True)
 
     order_id = models.CharField(
         max_length=200, default=None, null=True, blank=True)

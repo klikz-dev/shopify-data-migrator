@@ -437,6 +437,7 @@ class Processor:
             'amount_paid': 'Amount Paid',
             'po_number': 'PO Number',
             'tracking_number': 'tracking_number',
+            'check_number': 'CheckNum',
             'sales_rep_robin': 'Sales Rep Robin',
         }
 
@@ -469,7 +470,7 @@ class Processor:
                 order_no=order_no,
                 defaults={
                     'customer': customer,
-                    'order_date': row.get('order_date'),
+                    'order_date': common.to_date(row.get('order_date')),
                     'order_total': common.to_float(row.get('order_total')),
                     'terms': common.to_text(row.get('terms')),
                     'terms_due_date': common.to_date(row.get('terms_due_date')),
@@ -485,7 +486,9 @@ class Processor:
                     'amount_paid': common.to_float(row.get('amount_paid')),
                     'po_number': common.to_text(row.get('po_number')),
                     'tracking_number': common.to_text(row.get('tracking_number')),
-                    'sales_rep_robin': row.get('sales_rep_robin') == True
+                    'check_number': common.to_text(row.get('check_number')),
+                    'sales_rep_robin': row.get('sales_rep_robin') == True,
+                    'additional_attributes': row.get('attributes')
                 }
             )
 

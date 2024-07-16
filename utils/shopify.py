@@ -229,7 +229,9 @@ class Processor:
             'company',
             'po_number',
             'tracking_number',
+            'check_number',
             'sales_rep_robin',
+            'additional_attributes',
         ]
 
         metafields = []
@@ -247,6 +249,9 @@ class Processor:
                     continue
 
             else:
+                if metafield_key == "additional_attributes":
+                    metafield_value = json.dumps(metafield_value)
+
                 metafield = {
                     "namespace": "custom",
                     "key": metafield_key,
@@ -739,6 +744,7 @@ def create_customer(customer, thread=None):
 
             print(shopify_customer.errors.full_messages())
 
+            phone = customer_data['phone']
             del customer_data['phone']
             for address in customer_data["addresses"]:
                 if 'phone' in address:
@@ -754,8 +760,24 @@ def create_customer(customer, thread=None):
                     shopify_metafield.value = metafield['value']
                     shopify_customer.add_metafield(shopify_metafield)
 
-            else:
+            elif phone:
                 print(shopify_customer.errors.full_messages())
+
+                customer_data['phone'] = phone
+                del customer_data['email']
+
+                shopify_customer = ShopifyCustomer(customer_data)
+                if shopify_customer.save():
+
+                    for metafield in metafields:
+                        shopify_metafield = ShopifyMetafield()
+                        shopify_metafield.namespace = metafield['namespace']
+                        shopify_metafield.key = metafield['key']
+                        shopify_metafield.value = metafield['value']
+                        shopify_customer.add_metafield(shopify_metafield)
+
+                else:
+                    print(shopify_customer.errors.full_messages())
 
         return shopify_customer
 

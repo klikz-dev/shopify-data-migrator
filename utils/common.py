@@ -2367,7 +2367,7 @@ def to_int(value):
 def to_date(value):
     try:
         date = datetime.strptime(
-            value, "%m/%d/%Y").date() if value else None
+            str(value), "%m/%d/%Y").date() if value else None
         return date
     except:
         return None
