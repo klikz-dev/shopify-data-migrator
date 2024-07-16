@@ -187,6 +187,35 @@ class Processor:
 
         return variant_data
 
+    def generate_customer_metafields(self, customer):
+        metafield_keys = [
+            'customer_no',
+            'customer_type',
+            'trade_show_sales_representative',
+            'payment_terms',
+            'vat_no',
+            'orig_ad',
+            'check_dropship',
+            'additional_attributes',
+        ]
+
+        metafields = []
+        for metafield_key in metafield_keys:
+            metafield_value = getattr(customer, metafield_key)
+
+            if metafield_key == "additional_attributes":
+                metafield_value = json.dumps(metafield_value)
+
+            metafield = {
+                "namespace": "custom",
+                "key": metafield_key,
+                "value": metafield_value
+            }
+
+            metafields.append(metafield)
+
+        return metafields
+
     def generate_order_metafields(self, order):
         metafield_keys = [
             'order_no',
@@ -669,6 +698,8 @@ def list_customers(thread=None):
 def create_customer(customer, thread=None):
     processor = Processor(thread=thread)
 
+    metafields = processor.generate_customer_metafields(customer=customer)
+
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
         customer_data = {
@@ -697,29 +728,12 @@ def create_customer(customer, thread=None):
 
         if shopify_customer.save():
 
-            metafield_data = {
-                "namespace": "custom",
-                "key": "customer_",
-                "value": customer.customer_no
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
-
-            metafield_data = {
-                "namespace": "custom",
-                "key": "customer_type",
-                "value": customer.type
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
-
-            metafield_data = {
-                "namespace": "custom",
-                "key": "trade_show_sales_representative",
-                "value": customer.comm
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
+            for metafield in metafields:
+                shopify_metafield = ShopifyMetafield()
+                shopify_metafield.namespace = metafield['namespace']
+                shopify_metafield.key = metafield['key']
+                shopify_metafield.value = metafield['value']
+                shopify_customer.add_metafield(shopify_metafield)
 
         elif customer.email:
 
@@ -733,29 +747,12 @@ def create_customer(customer, thread=None):
             shopify_customer = ShopifyCustomer(customer_data)
             if shopify_customer.save():
 
-                metafield_data = {
-                    "namespace": "custom",
-                    "key": "customer_",
-                    "value": customer.customer_no
-                }
-                shopify_metafield = ShopifyMetafield(metafield_data)
-                shopify_customer.add_metafield(shopify_metafield)
-
-                metafield_data = {
-                    "namespace": "custom",
-                    "key": "customer_type",
-                    "value": customer.type
-                }
-                shopify_metafield = ShopifyMetafield(metafield_data)
-                shopify_customer.add_metafield(shopify_metafield)
-
-                metafield_data = {
-                    "namespace": "custom",
-                    "key": "trade_show_sales_representative",
-                    "value": customer.comm
-                }
-                shopify_metafield = ShopifyMetafield(metafield_data)
-                shopify_customer.add_metafield(shopify_metafield)
+                for metafield in metafields:
+                    shopify_metafield = ShopifyMetafield()
+                    shopify_metafield.namespace = metafield['namespace']
+                    shopify_metafield.key = metafield['key']
+                    shopify_metafield.value = metafield['value']
+                    shopify_customer.add_metafield(shopify_metafield)
 
             else:
                 print(shopify_customer.errors.full_messages())
