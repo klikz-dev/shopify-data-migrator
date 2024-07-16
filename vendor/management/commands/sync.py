@@ -194,7 +194,7 @@ class Processor:
     def customer(self):
 
         # Upload Customers
-        customers = Customer.objects.all().filter(customer_no=None)
+        customers = Customer.objects.all().filter(customer_id=None)
         total = len(customers)
 
         def sync_customer(index, customer):
