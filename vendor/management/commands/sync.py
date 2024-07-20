@@ -17,9 +17,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         processor = Processor()
 
-        if "delete" in options['functions']:
-            processor.delete()
-
         if "product" in options['functions']:
             processor.product()
 
@@ -47,43 +44,6 @@ class Processor:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def delete(self):
-        # Delete All Orders
-        all_order_ids = shopify.list_orders()
-
-        def delete_order(index, order_id):
-            print(f"Deleting {order_id}")
-            shopify.delete_order(order_id, thread=index)
-
-        common.thread(rows=all_order_ids, function=delete_order)
-
-        # Delete All Customers
-        # all_customer_ids = shopify.list_customers()
-
-        # def delete_customer(index, customer_id):
-        #     print(f"Deleting {customer_id}")
-        #     shopify.delete_customer(customer_id, thread=index)
-
-        # common.thread(rows=all_customer_ids, function=delete_customer)
-
-        # Delete All Products
-        # all_product_ids = shopify.list_products()
-
-        # def delete_product(index, product_id):
-        #     print(f"Deleting {product_id}")
-        #     shopify.delete_product(product_id, thread=index)
-
-        # common.thread(rows=all_product_ids, function=delete_product)
-
-        # Delete All Variants
-        # all_variant_ids = set(Product.objects.filter(
-        #     type__name="Variable").values_list('product_id', flat=True).distinct())
-        # for index, variant_product_id in enumerate(all_variant_ids):
-        #     print(f"Deleting {variant_product_id}")
-        #     shopify.delete_product(variant_product_id, thread=index)
-
         pass
 
     def product(self):

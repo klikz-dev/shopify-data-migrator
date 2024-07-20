@@ -904,13 +904,19 @@ def create_order(order, thread=None):
         }]
 
         shopify_order.total_price = order.order_total
-        shopify_order.total_discounts = order.order_total - \
-            order.amount_paid if order.order_total > order.amount_paid else 0
+        shopify_order.total_discounts = order.order_total * order.discount / 100
 
         if order.order_date:
             shopify_order.created_at = order.order_date.isoformat()
 
         shopify_order.fulfillment_status = "fulfilled"
+
+        if order.amount_paid == 0:
+            shopify_order.financial_status = "pending"
+        elif order.amount_paid < shopify_order.total_price:
+            shopify_order.financial_status = "partially_paid"
+        else:
+            shopify_order.financial_status = "paid"
 
         if shopify_order.save():
 

@@ -265,6 +265,7 @@ class Order(models.Model):
     terms_due_date = models.DateField(null=True, blank=True)
     order_code = models.CharField(
         max_length=200, default=None, null=True, blank=True)
+    discount = models.FloatField(default=0, null=False, blank=False)
     payment_method = models.CharField(
         max_length=200, default=None, null=True, blank=True)
     card_type = models.CharField(
