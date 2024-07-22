@@ -156,7 +156,7 @@ class Processor:
 
         product_data = {
             "title": product.title.title(),
-            "handle": common.to_handle(product.title),
+            # "handle": common.to_handle(product.title),
             "body_html": product.description,
             "vendor": vendor,
             "product_type": product_type,

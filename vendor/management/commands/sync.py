@@ -48,7 +48,8 @@ class Processor:
 
     def product(self):
 
-        products = Product.objects.all().exclude(type__name="Variable")
+        products = Product.objects.all().exclude(
+            type__name="Variable").filter(product_id=None)
         total = len(products)
 
         def sync_product(index, product):
@@ -154,7 +155,8 @@ class Processor:
     def customer(self):
 
         # Upload Customers
-        customers = Customer.objects.all().filter(customer_id=None)
+        customers = Customer.objects.all().filter(
+            customer_id=None).filter(customer_no=9949)
         total = len(customers)
 
         def sync_customer(index, customer):
@@ -174,10 +176,10 @@ class Processor:
                 print(f"Error syncing customer {customer.customer_no}")
                 print(customer.phone)
 
-        # for index, customer in enumerate(customers):
-        #     sync_customer(index, customer)
+        for index, customer in enumerate(customers):
+            sync_customer(index, customer)
 
-        common.thread(rows=customers, function=sync_customer)
+        # common.thread(rows=customers, function=sync_customer)
 
     def order(self):
 

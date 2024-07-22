@@ -434,6 +434,7 @@ class Processor:
             'shipping_cost': 'Shipping cost',
             'order_memo': 'Order Memo',
             'customer_no': 'Customer Number',
+            'customer_email': 'tblCust_email',
             'company': 'Company',
             'amount_paid': 'Amount Paid',
             'po_number': 'PO Number',
@@ -465,7 +466,14 @@ class Processor:
             try:
                 customer = Customer.objects.get(customer_no=customer_no)
             except Customer.DoesNotExist:
-                continue
+                try:
+                    customer_email = common.to_text(row['customer_email'])
+                    customer = Customer.objects.filter(
+                        email=customer_email).first()
+                    if not customer:
+                        continue
+                except:
+                    continue
 
             order, _ = Order.objects.get_or_create(
                 order_no=order_no,
