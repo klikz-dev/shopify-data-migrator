@@ -887,10 +887,13 @@ def create_order(order, thread=None):
             except:
                 continue
 
+            if item.quantity < 1 or item.unit_price < 0:
+                continue
+
             line_item = ShopifyLineItem({
                 "variant_id": variant_id,
                 "title": item.product.title,
-                "quantity": item.quantity if item.quantity >= 1 else 1,
+                "quantity": item.quantity,
                 "price": item.unit_price
             })
             line_items.append(line_item)
