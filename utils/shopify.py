@@ -887,7 +887,7 @@ def create_order(order, thread=None):
             except:
                 continue
 
-            if item.quantity < 1 or item.unit_price < 0:
+            if item.quantity < 1:
                 continue
 
             line_item = ShopifyLineItem({
