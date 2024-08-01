@@ -96,7 +96,9 @@ class Processor:
 
                 shopify_product_ids = []
                 for shopify_product in shopify_products:
-                    shopify_product_ids.append(shopify_product.id)
+                    tags = shopify_product.tags
+                    if "custom-bundle" not in tags:
+                        shopify_product_ids.append(shopify_product.id)
 
                 common.thread(rows=shopify_product_ids,
                               function=delete_product)
