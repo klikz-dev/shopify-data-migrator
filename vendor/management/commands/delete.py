@@ -89,7 +89,7 @@ class Processor:
 
         processor = shopify.Processor()
         with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
-            shopify_products = ShopifyProduct.find(limit=250, status="any")
+            shopify_products = ShopifyProduct.find(limit=250)
 
             while shopify_products:
                 print(f"Fetched {len(shopify_products)} Products.")
