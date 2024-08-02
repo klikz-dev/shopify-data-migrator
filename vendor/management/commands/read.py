@@ -364,11 +364,11 @@ class Processor:
             customer.note = common.to_text(row.get('note'))
 
             customer.trade_show_sales_representative = row.get(
-                'trade_show_sales_representative')
+                'trade_show_sales_representative') == True
             customer.payment_terms = common.to_int(row.get('payment_terms'))
             customer.vat_no = common.to_text(row.get('vat_no'))
             customer.orig_ad = common.to_text(row.get('orig_ad'))
-            customer.check_dropship = row.get('check_dropship')
+            customer.check_dropship = row.get('check_dropship') == True
             customer.additional_attributes = row.get('attributes')
 
             customer.save()
