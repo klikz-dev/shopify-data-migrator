@@ -153,3 +153,4 @@ cython_debug/
 
 # Files
 files/
+scripts/run.sh
