@@ -2322,7 +2322,7 @@ COUNTRY_DICT = [
 
 
 def thread(rows, function):
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         future_to_row = {executor.submit(
             function, index, row): row for index, row in enumerate(rows)}
 

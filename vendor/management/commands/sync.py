@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from pathlib import Path
 
 from utils import shopify, common
-from vendor.models import Product, Customer, Order, Collection
+from vendor.models import Product, Customer, Order, Collection, Company
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
 
@@ -34,6 +34,9 @@ class Command(BaseCommand):
 
         if "inventory" in options['functions']:
             processor.inventory()
+
+        if "company" in options['functions']:
+            processor.company()
 
 
 class Processor:
@@ -199,3 +202,22 @@ class Processor:
         #     sync_inventory(index, product)
 
         common.thread(rows=products, function=sync_inventory)
+
+    def company(self):
+
+        companies = Company.objects.all().filter(company_id=None)
+        total = len(companies)
+
+        def sync_company(index, company):
+            shopify_company = shopify.create_company(
+                company=company, thread=index)
+
+            if shopify_company.id:
+                company.company_id = shopify_company.id
+                company.save()
+                print(f"{index}/{total} -- Company {company.company_name} Created")
+
+        # for index, company in enumerate(companys):
+        #     sync_company(index, company)
+
+        common.thread(rows=companies, function=sync_company)

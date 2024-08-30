@@ -399,4 +399,5 @@ class LineItemAdmin(admin.ModelAdmin):
         'item_note'
     ]
 
+
 admin.site.register(Company)

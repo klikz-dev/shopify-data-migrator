@@ -966,3 +966,78 @@ def delete_order(id, thread=None):
         success = shopify_order.destroy()
 
         return success
+
+
+def create_company(company, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+        shopifyGraphQL = ShopifyGraphQL()
+
+        try:
+            mutation = """
+                mutation CompanyCreate($input: CompanyCreateInput!) {
+                    companyCreate(input: $input) {
+                        company {
+                            id
+                            name
+                        }
+                        userErrors {
+                            field
+                            message
+                            code
+                        }
+                    }
+                }
+            """
+            variables = {
+                "input": {
+                    "company": {
+                        "name": company.company_name,
+                        "note": company.company_note,
+                    },
+                    "companyLocation": {
+                        "name": company.location_name,
+                        "note": company.location_note,
+                        "phone": company.location_phone,
+                        "taxExemptions": [company.location_tax_exemption],
+                        "shippingAddress": {
+                            "firstName": company.shipping_first_name,
+                            "lastName": company.shipping_last_name,
+                            "phone": company.shipping_phone,
+                            "address1": company.shipping_address1,
+                            "address2": company.shipping_address2,
+                            "city": company.shipping_city,
+                            "zoneCode": company.shipping_state,
+                            "zip": company.shipping_zip,
+                            "countryCode": company.shipping_country
+                        },
+                        "billingAddress": {
+                            "firstName": company.billing_first_name,
+                            "lastName": company.billing_last_name,
+                            "phone": company.billing_phone,
+                            "address1": company.billing_address1,
+                            "address2": company.billing_address2,
+                            "city": company.billing_city,
+                            "zoneCode": company.billing_state,
+                            "zip": company.billing_zip,
+                            "countryCode": company.billing_country
+                        },
+                    },
+                    "companyContact": {
+                        "email": company.customer.email,
+                        "firstName": company.customer.first_name,
+                        "lastName": company.customer.last_name,
+                        "phone": company.customer.phone,
+                    }
+                }
+            }
+            response = shopifyGraphQL.execute(mutation, variables=variables)
+            response_data = json.loads(response)
+
+            company_id = response_data['data']['companyCreate']['company']['id']
+            return company_id
+
+        except Exception as e:
+            print(e)
+            return None

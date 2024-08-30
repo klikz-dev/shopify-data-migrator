@@ -513,7 +513,6 @@ class Processor:
                 item_note=common.to_text(row['item_note']),
             )
 
-
     def company(self):
 
         Company.objects.all().delete()
@@ -564,7 +563,7 @@ class Processor:
 
             try:
 
-                shipping_name=common.to_text(row['shipping_name'])
+                shipping_name = common.to_text(row['shipping_name'])
                 if " " in shipping_name:
                     shipping_first_name = shipping_name.split(" ")[0]
                     shipping_last_name = shipping_name.split(" ")[1]
@@ -572,7 +571,7 @@ class Processor:
                     shipping_first_name = shipping_name
                     shipping_last_name = ""
 
-                billing_name=common.to_text(row['billing_name'])
+                billing_name = common.to_text(row['billing_name'])
                 if " " in billing_name:
                     billing_first_name = billing_name.split(" ")[0]
                     billing_last_name = billing_name.split(" ")[1]
@@ -589,7 +588,8 @@ class Processor:
                     location_name=common.to_text(row['location_name']),
                     location_note=common.to_text(row['location_note']),
                     location_phone=common.to_text(row['location_phone']),
-                    location_tax_exemption=common.to_text(row['location_tax_exemption']),
+                    location_tax_exemption=common.to_text(
+                        row['location_tax_exemption']),
                     shipping_phone=common.to_text(row['shipping_phone']),
                     shipping_address1=common.to_text(row['shipping_address1']),
                     shipping_address2=common.to_text(row['shipping_address2']),
@@ -610,7 +610,7 @@ class Processor:
                     billing_first_name=billing_first_name,
                     billing_last_name=billing_last_name,
                 )
-                
+
             except Exception as e:
                 print(e)
                 continue
