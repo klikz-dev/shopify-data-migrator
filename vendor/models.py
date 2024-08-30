@@ -251,6 +251,44 @@ class Customer(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
+class Company(models.Model):
+    company_name = models.CharField(max_length=200, primary_key=True)
+    company_note = models.CharField(max_length=200, default=None, null=True, blank=True)
+
+    customer = models.ForeignKey(
+        Customer, related_name='companies', on_delete=models.CASCADE, blank=False, null=False)
+
+    location_name = models.CharField(max_length=200, default=None, null=True, blank=True)
+    location_note = models.CharField(max_length=200, default=None, null=True, blank=True)
+    location_phone = models.CharField(max_length=200, default=None, null=True, blank=True)
+    location_tax_exemption = models.CharField(max_length=200, default=None, null=True, blank=True)
+
+    shipping_first_name = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_last_name = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_phone = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_address1 = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_address2 = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_city = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_state = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_zip = models.CharField(max_length=200, default=None, null=True, blank=True)
+    shipping_country = models.CharField(max_length=200, default=None, null=True, blank=True)
+
+    billing_first_name = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_last_name = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_phone = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_address1 = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_address2 = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_city = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_state = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_zip = models.CharField(max_length=200, default=None, null=True, blank=True)
+    billing_country = models.CharField(max_length=200, default=None, null=True, blank=True)
+
+    company_id = models.CharField(max_length=200, default=None, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company_name}"
+    
+
 class Order(models.Model):
 
     order_no = models.CharField(max_length=200, primary_key=True)
@@ -315,3 +353,5 @@ class LineItem(models.Model):
 
     def __str__(self):
         return self.order.order_no
+
+

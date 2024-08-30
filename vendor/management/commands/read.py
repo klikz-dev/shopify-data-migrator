@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from utils import common, feed
 
-from vendor.models import Product, Vendor, Type, Collection, Tag, Image, Setpart, Customer, Order, LineItem
+from vendor.models import Product, Vendor, Type, Collection, Tag, Image, Setpart, Customer, Order, LineItem, Company
 
 FILEDIR = f"{Path(__file__).resolve().parent.parent}/files"
 IMAGEDIR = f"{Path(__file__).resolve().parent.parent}/files/images"
@@ -34,6 +34,9 @@ class Command(BaseCommand):
 
         if "order" in options['functions']:
             processor.order()
+
+        if "company" in options['functions']:
+            processor.company()
 
 
 class Processor:
@@ -509,3 +512,105 @@ class Processor:
                 quantity=common.to_int(row['quantity']),
                 item_note=common.to_text(row['item_note']),
             )
+
+
+    def company(self):
+
+        Company.objects.all().delete()
+
+        # Get Set Parts Data
+        column_map = {
+            'company_name': "Ming",
+            'company_note': 'Notes',
+
+            'customer_no': 'Main Contact: Customer ID',
+
+            'location_name': 'Location: Name',
+            'location_note': 'Location: Notes',
+            'location_phone': 'Location: Phone',
+            'location_tax_exemption': 'Location: Tax Exemptions',
+            'shipping_name': 'Location: Shipping Recipient',
+            'shipping_phone': 'Location:ShippingPhone',
+            'shipping_address1': 'Location: Shipping Address 1',
+            'shipping_address2': 'Location: Shipping Address 2',
+            'shipping_city': 'Location: Shipping City',
+            'shipping_state': 'Location: Shipping Province Code',
+            'shipping_zip': 'Location: Shipping Zip',
+            'shipping_country': 'Location: Shipping Country Code',
+            'billing_name': 'Location: Billing Recipient',
+            'billing_phone': 'Location:BillingPhone',
+            'billing_address1': 'Location: billing Address 1',
+            'billing_address2': 'Location: Billing Address 2',
+            'billing_city': 'Location: Billing City',
+            'billing_state': 'Location: Billing Province Code',
+            'billing_zip': 'Location: Billing Zip',
+            'billing_country': 'Location: Billing Country Code',
+        }
+
+        rows = feed.readExcel(
+            file_path=f"{FILEDIR}/ecc-companies-master.xlsx",
+            column_map=column_map,
+            exclude=[]
+        )
+
+        for row in tqdm(rows):
+            customer_no = common.to_text(row['customer_no'])
+            try:
+                customer = Customer.objects.get(
+                    customer_no=customer_no)
+            except Customer.DoesNotExist:
+                print(f"Customer {customer_no} Not found")
+                continue
+
+            try:
+
+                shipping_name=common.to_text(row['shipping_name'])
+                if " " in shipping_name:
+                    shipping_first_name = shipping_name.split(" ")[0]
+                    shipping_last_name = shipping_name.split(" ")[1]
+                else:
+                    shipping_first_name = shipping_name
+                    shipping_last_name = ""
+
+                billing_name=common.to_text(row['billing_name'])
+                if " " in billing_name:
+                    billing_first_name = billing_name.split(" ")[0]
+                    billing_last_name = billing_name.split(" ")[1]
+                else:
+                    billing_first_name = billing_name
+                    billing_last_name = ""
+
+                Company.objects.create(
+                    company_name=common.to_text(row['company_name']),
+                    company_note=common.to_text(row['company_note']),
+
+                    customer=customer,
+
+                    location_name=common.to_text(row['location_name']),
+                    location_note=common.to_text(row['location_note']),
+                    location_phone=common.to_text(row['location_phone']),
+                    location_tax_exemption=common.to_text(row['location_tax_exemption']),
+                    shipping_phone=common.to_text(row['shipping_phone']),
+                    shipping_address1=common.to_text(row['shipping_address1']),
+                    shipping_address2=common.to_text(row['shipping_address2']),
+                    shipping_city=common.to_text(row['shipping_city']),
+                    shipping_state=common.to_text(row['shipping_state']),
+                    shipping_zip=common.to_text(row['shipping_zip']),
+                    shipping_country=common.to_text(row['shipping_country']),
+                    billing_phone=common.to_text(row['billing_phone']),
+                    billing_address1=common.to_text(row['billing_address1']),
+                    billing_address2=common.to_text(row['billing_address2']),
+                    billing_city=common.to_text(row['billing_city']),
+                    billing_state=common.to_text(row['billing_state']),
+                    billing_zip=common.to_text(row['billing_zip']),
+                    billing_country=common.to_text(row['billing_country']),
+
+                    shipping_first_name=shipping_first_name,
+                    shipping_last_name=shipping_last_name,
+                    billing_first_name=billing_first_name,
+                    billing_last_name=billing_last_name,
+                )
+                
+            except Exception as e:
+                print(e)
+                continue

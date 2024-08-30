@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Vendor, Type, Collection, Tag, Product, Image, Setpart, Customer, Order, LineItem
+from .models import Vendor, Type, Collection, Tag, Product, Image, Setpart, Customer, Order, LineItem, Company
 
 
 @admin.register(Vendor)
@@ -398,3 +398,5 @@ class LineItemAdmin(admin.ModelAdmin):
         'quantity',
         'item_note'
     ]
+
+admin.site.register(Company)
