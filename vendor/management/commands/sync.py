@@ -209,15 +209,16 @@ class Processor:
         total = len(companies)
 
         def sync_company(index, company):
-            shopify_company = shopify.create_company(
+            company_id = shopify.create_company(
                 company=company, thread=index)
 
-            if shopify_company.id:
-                company.company_id = shopify_company.id
+            if company_id:
+                company.company_id = company_id
                 company.save()
                 print(f"{index}/{total} -- Company {company.company_name} Created")
 
-        # for index, company in enumerate(companys):
-        #     sync_company(index, company)
+        for index, company in enumerate(companies):
+            sync_company(index, company)
+            break
 
-        common.thread(rows=companies, function=sync_company)
+        # common.thread(rows=companies, function=sync_company)
