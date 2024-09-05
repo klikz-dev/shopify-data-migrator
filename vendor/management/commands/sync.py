@@ -217,8 +217,7 @@ class Processor:
                 company.save()
                 print(f"{index}/{total} -- Company {company.company_name} Created")
 
-        for index, company in enumerate(companies):
-            sync_company(index, company)
-            break
+        # for index, company in enumerate(companies):
+        #     sync_company(index, company)
 
-        # common.thread(rows=companies, function=sync_company)
+        common.thread(rows=companies, function=sync_company)
