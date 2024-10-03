@@ -1080,3 +1080,35 @@ def create_company(company, thread=None):
         except Exception as e:
             print(e)
             return None
+
+def delete_company(companyId, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+        shopifyGraphQL = ShopifyGraphQL()
+
+        try:
+            mutation = """
+                mutation companiesDelete($companyIds: [ID!]!) {
+                    companiesDelete(companyIds: $companyIds) {
+                        deletedCompanyIds
+                        userErrors {
+                            field
+                            message
+                        }
+                    }
+                }
+            """
+            variables = {
+                "companyIds": [
+                    companyId
+                ]
+            }
+            response = shopifyGraphQL.execute(mutation, variables=variables)
+            response_data = json.loads(response)
+
+            return response_data['data']['companiesDelete']['deletedCompanyIds']
+
+        except Exception as e:
+            print(e)
+            return None
