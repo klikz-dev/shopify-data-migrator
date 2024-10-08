@@ -61,25 +61,6 @@ class Setpart(models.Model):
     parent_order_code = models.CharField(
         max_length=200, default=None, blank=True, null=True)
 
-    # metal = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # diameter = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # circulation = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # assoc = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # price = models.FloatField(default=1, null=True, blank=True)
-    # obverse_detail = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # reverse_detail = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # info = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # country = models.CharField(
-    #     max_length=200, default=None, blank=True, null=True)
-    # unit_weight = models.FloatField(default=1, null=True, blank=True)
-
     def __str__(self):
         return self.sku
 
@@ -164,9 +145,31 @@ class Product(models.Model):
         max_length=200, default=None, null=True, blank=True)
     notation = models.TextField(
         max_length=2000, default=None, null=True, blank=True)
-    bulk_qty = models.IntegerField(default=0)
+
+    assoc = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    slvrcont = models.FloatField(default=0, null=True, blank=True)
+    unit_weight = models.FloatField(default=0, null=True, blank=True)
+    slvweight = models.FloatField(default=0, null=True, blank=True)
+    txtsilveryr = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    centurytxt = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    chksilver = models.BooleanField(default=False)
+    invhdate = models.DateField(null=True, blank=True)
+
+    bulk_qty = models.IntegerField(default=0, null=True, blank=True)
     additional_attributes = models.JSONField(
         default=dict, blank=True, null=True)
+
+    call_for_price = models.BooleanField(default=False)
+    sort_order = models.IntegerField(default=0, null=True, blank=True)
+    keywords = models.CharField(
+        max_length=500, default=None, null=True, blank=True)
+    seo_title = models.CharField(
+        max_length=200, default=None, null=True, blank=True)
+    meta_description = models.CharField(
+        max_length=1000, default=None, null=True, blank=True)
 
     # Variant
     variable = models.CharField(
@@ -351,6 +354,8 @@ class Order(models.Model):
     sales_rep_robin = models.BooleanField(default=False)
     check_number = models.CharField(
         max_length=200, default=None, null=True, blank=True)
+    checkamoun = models.FloatField(default=0, null=True, blank=True)
+    credit_memo = models.FloatField(default=0, null=True, blank=True)
     additional_attributes = models.JSONField(
         default=dict, blank=True, null=True)
 

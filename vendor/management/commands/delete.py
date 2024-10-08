@@ -29,6 +29,9 @@ class Command(BaseCommand):
         if "product" in options['functions']:
             processor.product()
 
+        if "company" in options['functions']:
+            processor.company()
+
 
 class Processor:
     def __init__(self):
@@ -105,3 +108,25 @@ class Processor:
 
                 shopify_products = shopify_products.has_next_page(
                 ) and shopify_products.next_page() or []
+
+    def company(self):
+        company_ids = []
+
+        cursor = None
+        while True:
+            companies = shopify.list_companies(cursor)
+            if len(companies['nodes']) == 0:
+                break
+
+            for company in companies['nodes']:
+                company_id = company['id']
+
+                company_ids.append(company_id)
+
+            cursor = companies['pageInfo']['endCursor']
+
+        def delete_company(index, company_id):
+            print(f"Deleting {company_id}")
+            shopify.delete_company(company_id, thread=index)
+
+        common.thread(rows=company_ids, function=delete_company)

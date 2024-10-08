@@ -174,8 +174,24 @@ class ProductAdmin(admin.ModelAdmin):
             'binmr',
             'bing',
             'notation',
+
+            'assoc',
+            'slvrcont',
+            'unit_weight',
+            'slvweight',
+            'txtsilveryr',
+            'centurytxt',
+            'chksilver',
+            'invhdate',
+
             'bulk_qty',
             'additional_attributes',
+
+            'call_for_price',
+            'sort_order',
+            'keywords',
+            'seo_title',
+            'meta_description',
         ]}),
         ("Variant", {'fields': [
             'variable',
@@ -279,26 +295,6 @@ class ImageAdmin(admin.ModelAdmin):
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
 
-    # fields = [
-    #     'customer_no',
-    #     'email',
-    #     'phone',
-    #     'first_name',
-    #     'last_name',
-    #     'company',
-    #     'address1',
-    #     'address2',
-    #     'city',
-    #     'state',
-    #     'zip',
-    #     'country',
-    #     'note',
-    #     'tags',
-    #     'type',
-    #     'comm',
-    #     'customer_id',
-    # ]
-
     list_display = [
         'customer_no',
         'email',
@@ -400,4 +396,17 @@ class LineItemAdmin(admin.ModelAdmin):
     ]
 
 
-admin.site.register(Company)
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+
+    list_display = [
+        'company_name',
+        'customer',
+        'company_id',
+    ]
+
+    search_fields = [
+        'company_name',
+        'customer__customer_id',
+        'company_id',
+    ]

@@ -2322,7 +2322,7 @@ COUNTRY_DICT = [
 
 
 def thread(rows, function):
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_row = {executor.submit(
             function, index, row): row for index, row in enumerate(rows)}
 
@@ -2366,11 +2366,15 @@ def to_int(value):
 
 def to_date(value):
     try:
-        date = datetime.strptime(
-            str(value), "%m/%d/%Y").date() if value else None
+        date = value.date() if value else None
         return date
     except:
-        return None
+        try:
+            date = datetime.strptime(
+                str(value), "%m/%d/%Y").date() if value else None
+            return date
+        except:
+            return None
 
 
 def to_handle(text):
@@ -2393,6 +2397,8 @@ def to_country(code):
 
 
 def to_phone(country, phone_number):
+    phone_number = to_text(to_int(phone_number))
+
     try:
         parsed_number = phonenumbers.parse(phone_number, country)
         formatted_number = phonenumbers.format_number(
@@ -2400,3 +2406,16 @@ def to_phone(country, phone_number):
         return formatted_number
     except phonenumbers.phonenumberutil.NumberParseException:
         return None
+
+def to_name(full_name):
+    full_name = to_text(full_name)
+    name_parts = full_name.split()
+    
+    if len(name_parts) > 1:
+        first_name = name_parts[0]
+        last_name = " ".join(name_parts[1:])
+    else:
+        first_name = full_name
+        last_name = ""
+
+    return first_name, last_name

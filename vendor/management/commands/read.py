@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from pathlib import Path
 from tqdm import tqdm
 
-from utils import common, feed
+from utils import common, feed, shopify
 
 from vendor.models import Product, Vendor, Type, Collection, Tag, Image, Setpart, Customer, Order, LineItem, Company
 
@@ -71,6 +71,15 @@ class Processor:
             'notation': 'NOTATION',
 
             'quantity': 'BINH',
+
+            'assoc': 'ASSOC',
+            'slvrcont': 'slvrCont',
+            'unit_weight': 'UNITWEIGHT',
+            'slvweight': 'slvWeight',
+            'txtsilveryr': 'txtSilverYr',
+            'centurytxt': 'CenturyTxt',
+            'chksilver': 'chkSilver',
+            'invhdate': 'invHdate',
         }
 
         rows = feed.readExcel(
@@ -91,18 +100,36 @@ class Processor:
 
             quantity = common.to_int(row['quantity'])
 
+            assoc = common.to_text(row['assoc'])
+            slvrcont = common.to_float(row['slvrcont'])
+            unit_weight = common.to_float(row['unit_weight'])
+            slvweight = common.to_float(row['slvweight'])
+            txtsilveryr = common.to_text(row['txtsilveryr'])
+            centurytxt = common.to_text(row['centurytxt'])
+            chksilver = row['chksilver'] == True
+            invhdate = common.to_date(row['invhdate'])
+
             details[sku] = {
                 'binrr': binrr,
                 'binother': binother,
                 'binmr': binmr,
                 'bing': bing,
                 'notation': notation,
-                'quantity': quantity
+                'quantity': quantity,
+
+                'assoc': assoc,
+                'slvrcont': slvrcont,
+                'unit_weight': unit_weight,
+                'slvweight': slvweight,
+                'txtsilveryr': txtsilveryr,
+                'centurytxt': centurytxt,
+                'chksilver': chksilver,
+                'invhdate': invhdate,
             }
 
         # Get Product Feed
         column_map = {
-            'sku': 'sku',
+            'sku': 'SKU',
             'title': 'title',
             'description': 'long_description',
 
@@ -148,6 +175,12 @@ class Processor:
             'note': 'notes',
 
             'images': 'images',
+
+            'call_for_price': 'call_for_price',
+            'sort_order': 'sort_order',
+            'keywords': 'keywords',
+            'seo_title': 'seo_title',
+            'meta_description': 'meta_description',
         }
 
         rows = feed.readExcel(
@@ -255,8 +288,24 @@ class Processor:
             product.binmr = details.get(sku, {}).get('binmr', "")
             product.bing = details.get(sku, {}).get('bing', "")
             product.notation = details.get(sku, {}).get('notation', "")
+
+            product.assoc = details.get(sku, {}).get('assoc', "")
+            product.slvrcont = details.get(sku, {}).get('slvrcont', 0)
+            product.unit_weight = details.get(sku, {}).get('unit_weight', 0)
+            product.slvweight = details.get(sku, {}).get('slvweight', 0)
+            product.txtsilveryr = details.get(sku, {}).get('txtsilveryr', "")
+            product.centurytxt = details.get(sku, {}).get('centurytxt', "")
+            product.chksilver = details.get(sku, {}).get('chksilver', False)
+            product.invhdate = details.get(sku, {}).get('invhdate', None)
+
             product.bulk_qty = common.to_int(row['bulk_qty'])
             product.additional_attributes = row['attributes']
+
+            product.call_for_price = row.get('call_for_price') == True
+            product.sort_order = common.to_int(row.get('sort_order'))
+            product.keywords = common.to_text(row.get('keywords'))
+            product.seo_title = common.to_text(row.get('seo_title'))
+            product.meta_description = common.to_text(row.get('meta_description'))
 
             # Images
             images = common.to_text(row['images']).split("|")
@@ -417,6 +466,7 @@ class Processor:
     def order(self):
 
         Order.objects.all().delete()
+        LineItem.objects.all().delete()
 
         column_map = {
             'order_no': 'Order Number',
@@ -444,6 +494,10 @@ class Processor:
             'tracking_number': 'tracking_number',
             'check_number': 'CheckNum',
             'sales_rep_robin': 'Sales Rep Robin',
+            'checkamoun': 'CHECKAMOUN',
+            'last_name': 'Last Name', # unused
+            'first_name': 'First Name', # unused
+            'credit_memo': 'Credit Memo',
         }
 
         rows = feed.readExcel(
@@ -501,6 +555,8 @@ class Processor:
                     'tracking_number': common.to_text(row.get('tracking_number')),
                     'check_number': common.to_text(row.get('check_number')),
                     'sales_rep_robin': row.get('sales_rep_robin') == True,
+                    'checkamoun': common.to_float(row.get('checkamoun')),
+                    'credit_memo': common.to_float(row.get('credit_memo')),
                     'additional_attributes': row.get('attributes')
                 }
             )
@@ -519,10 +575,11 @@ class Processor:
 
         # Get Set Parts Data
         column_map = {
-            'company_name': "Ming",
+            'company_name': 'Company name',
             'company_note': 'Notes',
 
             'customer_no': 'Main Contact: Customer ID',
+            'customer_email': 'Main Contact: Customer Email',
 
             'location_name': 'Location: Name',
             'location_note': 'Location: Notes',
@@ -547,13 +604,88 @@ class Processor:
         }
 
         rows = feed.readExcel(
-            file_path=f"{FILEDIR}/ecc-companies-master.xlsx",
+            file_path=f"{FILEDIR}/wholesale-companies-master.xlsx",
             column_map=column_map,
             exclude=[]
         )
 
+        # Set up Missing Customers
         for row in tqdm(rows):
             customer_no = common.to_text(row['customer_no'])
+            customer_email = common.to_text(row['customer_email'])
+
+            try:
+                customer = Customer.objects.get(customer_no=customer_no)
+
+                # if not customer.email and customer_email:
+                #     customer.email = customer_email
+                #     customer.save()
+
+                # if customer_email:
+                #     shopify_customer = shopify.update_customer(customer=customer)
+                #     if shopify_customer:
+                #         print(f"Updated customer {shopify_customer.id}")
+
+                continue
+
+            except Customer.DoesNotExist:
+                pass
+
+            shipping_first_name, shipping_last_name = common.to_name(row['shipping_name'])
+            shipping_address1=common.to_text(row['shipping_address1'])
+            shipping_address2=common.to_text(row['shipping_address2'])
+            shipping_city=common.to_text(row['shipping_city'])
+            shipping_state=common.to_text(row['shipping_state'])
+            shipping_zip=common.to_text(row['shipping_zip'])
+            shipping_country=common.to_text(row['shipping_country'])
+            shipping_phone=common.to_phone(shipping_country, row['shipping_phone'])
+
+            Customer.objects.create(
+                customer_no=customer_no,
+                email=customer_email,
+                first_name=shipping_first_name,
+                last_name=shipping_last_name,
+                address1=shipping_address1,
+                address2=shipping_address2,
+                city=shipping_city,
+                state=shipping_state,
+                zip=shipping_zip,
+                country=shipping_country,
+                phone=shipping_phone,
+            )
+
+        # Read Orders
+        for row in tqdm(rows):
+            country=common.to_text(row['shipping_country'])
+
+            company_name=common.to_text(row['company_name'])
+            company_note=common.to_text(row['company_note'])
+            location_name=common.to_text(row['location_name'])
+            location_note=common.to_text(row['location_note'])
+            location_phone=common.to_phone(country, row['location_phone'])
+            location_tax_exemption=common.to_text(row['location_tax_exemption'])
+            shipping_phone=common.to_phone(country, row['shipping_phone'])
+            shipping_address1=common.to_text(row['shipping_address1'])
+            shipping_address2=common.to_text(row['shipping_address2'])
+            shipping_city=common.to_text(row['shipping_city'])
+            shipping_state=common.to_text(row['shipping_state'])
+            shipping_zip=common.to_text(row['shipping_zip'])
+            shipping_country=common.to_text(row['shipping_country'])
+            billing_phone=common.to_phone(country, row['billing_phone'])
+            billing_address1=common.to_text(row['billing_address1'])
+            billing_address2=common.to_text(row['billing_address2'])
+            billing_city=common.to_text(row['billing_city'])
+            billing_state=common.to_text(row['billing_state'])
+            billing_zip=common.to_text(row['billing_zip'])
+            billing_country=common.to_text(row['billing_country'])
+
+            shipping_first_name, shipping_last_name = common.to_name(row['shipping_name'])
+
+            billing_first_name, billing_last_name = common.to_name(row['billing_name'])
+
+            customer_no = common.to_text(row['customer_no'])
+            customer_email = common.to_text(row['customer_email'])
+
             try:
                 customer = Customer.objects.get(
                     customer_no=customer_no)
@@ -562,48 +694,36 @@ class Processor:
                 continue
 
             try:
-
-                shipping_name = common.to_text(row['shipping_name'])
-                if " " in shipping_name:
-                    shipping_first_name = shipping_name.split(" ")[0]
-                    shipping_last_name = shipping_name.split(" ")[1]
-                else:
-                    shipping_first_name = shipping_name
-                    shipping_last_name = ""
-
-                billing_name = common.to_text(row['billing_name'])
-                if " " in billing_name:
-                    billing_first_name = billing_name.split(" ")[0]
-                    billing_last_name = billing_name.split(" ")[1]
-                else:
-                    billing_first_name = billing_name
-                    billing_last_name = ""
+                try:
+                    Company.objects.get(company_name=company_name)
+                    continue
+                except Company.DoesNotExist:
+                    pass
 
                 Company.objects.create(
-                    company_name=common.to_text(row['company_name']),
-                    company_note=common.to_text(row['company_note']),
+                    company_name=company_name,
+                    company_note=company_note,
 
                     customer=customer,
 
-                    location_name=common.to_text(row['location_name']),
-                    location_note=common.to_text(row['location_note']),
-                    location_phone=common.to_text(row['location_phone']),
-                    location_tax_exemption=common.to_text(
-                        row['location_tax_exemption']),
-                    shipping_phone=common.to_text(row['shipping_phone']),
-                    shipping_address1=common.to_text(row['shipping_address1']),
-                    shipping_address2=common.to_text(row['shipping_address2']),
-                    shipping_city=common.to_text(row['shipping_city']),
-                    shipping_state=common.to_text(row['shipping_state']),
-                    shipping_zip=common.to_text(row['shipping_zip']),
-                    shipping_country=common.to_text(row['shipping_country']),
-                    billing_phone=common.to_text(row['billing_phone']),
-                    billing_address1=common.to_text(row['billing_address1']),
-                    billing_address2=common.to_text(row['billing_address2']),
-                    billing_city=common.to_text(row['billing_city']),
-                    billing_state=common.to_text(row['billing_state']),
-                    billing_zip=common.to_text(row['billing_zip']),
-                    billing_country=common.to_text(row['billing_country']),
+                    location_name=location_name,
+                    location_note=location_note,
+                    location_phone=location_phone,
+                    location_tax_exemption=location_tax_exemption,
+                    shipping_phone=shipping_phone,
+                    shipping_address1=shipping_address1,
+                    shipping_address2=shipping_address2,
+                    shipping_city=shipping_city,
+                    shipping_state=shipping_state,
+                    shipping_zip=shipping_zip,
+                    shipping_country=shipping_country,
+                    billing_phone=billing_phone,
+                    billing_address1=billing_address1,
+                    billing_address2=billing_address2,
+                    billing_city=billing_city,
+                    billing_state=billing_state,
+                    billing_zip=billing_zip,
+                    billing_country=billing_country,
 
                     shipping_first_name=shipping_first_name,
                     shipping_last_name=shipping_last_name,

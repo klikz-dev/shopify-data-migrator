@@ -51,27 +51,49 @@ class Processor:
 
     def product(self):
 
+        custom_bundle_skus = {}
+        current_shopify_products = shopify.list_products()
+        for shopify_product in current_shopify_products:
+            if "custom-bundle" in shopify_product.tags:
+                custom_bundle_skus[shopify_product.variants[0].sku] = shopify_product.id
+
         products = Product.objects.all().exclude(
             type__name="Variable").filter(product_id=None)
         total = len(products)
 
         def sync_product(index, product):
-            shopify_product = shopify.create_product(
-                product=product, thread=index)
+            if product.sku in custom_bundle_skus:
 
-            if shopify_product.id:
-                product.product_id = shopify_product.id
-                product.handle = shopify_product.handle
-                product.save()
+                shopify_product = shopify.update_product(
+                    id=custom_bundle_skus[product.sku], product=product, thread=index)
 
-                shopify.update_inventory(product=product, thread=index)
-                self.image(product)
+                if shopify_product.id:
+                    product.product_id = shopify_product.id
+                    product.handle = shopify_product.handle
+                    product.save()
 
-                print(
-                    f"{index}/{total} -- Product {shopify_product.id} Created")
+                    print(
+                        f"{index}/{total} -- Product {shopify_product.id} Updated")
+
+            else:
+
+                shopify_product = shopify.create_product(
+                    product=product, thread=index)
+
+                if shopify_product.id:
+                    product.product_id = shopify_product.id
+                    product.handle = shopify_product.handle
+                    product.save()
+
+                    shopify.update_inventory(product=product, thread=index)
+                    self.image(product)
+
+                    print(
+                        f"{index}/{total} -- Product {shopify_product.id} Created")
 
         # for index, product in enumerate(products):
         #     sync_product(index, product)
+        #     break
 
         common.thread(rows=products, function=sync_product)
 

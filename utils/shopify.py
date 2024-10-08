@@ -63,7 +63,18 @@ class Processor:
             'notation',
             'bulk_qty',
             'additional_attributes',
-            'product_attachment_file'
+            'product_attachment_file',
+            'assoc',
+            'slvrcont',
+            'unit_weight',
+            'slvweight',
+            'txtsilveryr',
+            'centurytxt',
+            'chksilver',
+            'invhdate',
+            'call_for_price',
+            'sort_order',
+            'keywords',
         ]
 
         metafields = []
@@ -90,6 +101,9 @@ class Processor:
                 if metafield_key == "additional_attributes":
                     metafield_value = json.dumps(metafield_value)
 
+                if metafield_key in ["custom_date", "news_from_date", "news_to_date", "invhdate"] and metafield_value:
+                    metafield_value = metafield_value.isoformat()
+
                 metafield = {
                     "namespace": "custom",
                     "key": metafield_key,
@@ -106,16 +120,6 @@ class Processor:
                 'order_code': setpart.order_code,
                 'title': setpart.title,
                 'parent_order_code': setpart.parent_order_code,
-                # 'metal': setpart.metal,
-                # 'diameter': setpart.diameter,
-                # 'circulation': setpart.circulation,
-                # 'assoc': setpart.assoc,
-                # 'price': setpart.price,
-                # 'obverse_detail': setpart.obverse_detail,
-                # 'reverse_detail': setpart.reverse_detail,
-                # 'info': setpart.info,
-                # 'country': setpart.country,
-                # 'unit_weight': setpart.unit_weight,
             })
 
         setpart_metafield = {
@@ -128,7 +132,7 @@ class Processor:
 
         return metafields
 
-    def generate_product_tags(self, product):
+    def generate_product_tags(self, product, custom_bundle):
 
         tags = []
 
@@ -143,28 +147,36 @@ class Processor:
         for tag in product.tags.all():
             tags.append(f"{tag.name}")
 
+        if custom_bundle:
+            tags.append("custom-bundle")
+
         return ",".join(tags)
 
-    def generate_product_data(self, product):
+    def generate_product_data(self, product, custom_bundle=False):
 
         vendor = product.vendor.name
         product_type = product.type.name
-        product_tags = self.generate_product_tags(product=product)
+        product_tags = self.generate_product_tags(product=product, custom_bundle=custom_bundle)
 
         # if len(product.setparts.all()) > 0:
         #     product_type = "Bundle"
 
         product_data = {
             "title": product.title.title(),
-            # "handle": common.to_handle(product.title),
             "body_html": product.description,
             "vendor": vendor,
             "product_type": product_type,
             "tags": product_tags,
         }
 
-        if product_type == "Off Website" or not product.status:
-            product_data['published_at'] = None
+        if product.seo_title:
+            product_data['metafields_global_title_tag'] = product.seo_title
+        if product.meta_description:
+            product_data['metafields_global_description_tag'] = product.meta_description
+
+        if not custom_bundle:
+            if product_type == "Off Website" or not product.status:
+                product_data['published_at'] = None
 
         return product_data
 
@@ -232,6 +244,8 @@ class Processor:
             'check_number',
             'sales_rep_robin',
             'additional_attributes',
+            'checkamoun',
+            'credit_memo'
         ]
 
         metafields = []
@@ -282,7 +296,7 @@ def list_products(thread=None):
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        all_shopify_product_ids = []
+        all_shopify_products = []
         shopify_products = ShopifyProduct.find(limit=250)
 
         while shopify_products:
@@ -290,12 +304,12 @@ def list_products(thread=None):
             print(f"Fetched {len(shopify_products)} Products")
 
             for shopify_product in shopify_products:
-                all_shopify_product_ids.append(shopify_product.id)
+                all_shopify_products.append(shopify_product)
 
             shopify_products = shopify_products.has_next_page(
             ) and shopify_products.next_page() or []
 
-        return all_shopify_product_ids
+        return all_shopify_products
 
 
 def get_product(id, thread=None):
@@ -393,39 +407,47 @@ def create_variable_product(product, variants, thread=None):
         return shopify_product
 
 
-def update_product(product, thread=None):
+def update_product(id, product, thread=None):
 
     processor = Processor(thread=thread)
 
-    product_data = processor.generate_product_data(product=product)
-    # variant_data = processor.generate_variant_data(product=product)
-    # metafields = processor.generate_product_metafields(product=product)
+    product_data = processor.generate_product_data(product=product, custom_bundle=True)
+    variant_data = processor.generate_variant_data(product=product)
+    metafields = processor.generate_product_metafields(product=product)
 
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
 
-        shopify_product = ShopifyProduct.find(product.product_id)
+        shopify_product = ShopifyProduct.find(id)
         for key in product_data.keys():
             setattr(shopify_product, key, product_data.get(key))
 
-        # shopify_variant = ShopifyVariant()
-        # for key in variant_data.keys():
-        #     setattr(shopify_variant, key, variant_data.get(key))
-        # shopify_product.variants = [shopify_variant]
+        shopify_variant = ShopifyVariant()
+        for key in variant_data.keys():
+            setattr(shopify_variant, key, variant_data.get(key))
+        shopify_product.variants = [shopify_variant]
 
         shopify_product.save()
 
-        # for metafield in metafields:
-        #     shopify_metafield = ShopifyMetafield()
-        #     shopify_metafield.namespace = metafield['namespace']
-        #     shopify_metafield.key = metafield['key']
-        #     shopify_metafield.value = metafield['value']
+        for metafield in metafields:
+            existing_metafield = None
+            
+            # Attempt to find existing metafield
+            for field in shopify_product.metafields():
+                if field.namespace == metafield['namespace'] and field.key == metafield['key']:
+                    existing_metafield = field
+                    break
 
-        #     if metafield['key'] == "setparts":
-        #         shopify_metafield.type_type = 'json_string'
+            if existing_metafield:
+                existing_metafield.value = metafield['value']
+                existing_metafield.save()                
 
-        #     shopify_metafield.save()
-
-        #     shopify_product.add_metafield(shopify_metafield)
+            else:
+                shopify_metafield = ShopifyMetafield()
+                shopify_metafield.namespace = metafield['namespace']
+                shopify_metafield.key = metafield['key']
+                shopify_metafield.value = metafield['value']
+                shopify_metafield.save()
+                shopify_product.add_metafield(shopify_metafield)
 
         return shopify_product
 
@@ -790,37 +812,43 @@ def update_customer(customer, thread=None):
         shopify_customer = ShopifyCustomer.find(customer.customer_id)
 
         shopify_customer.email = customer.email
-        shopify_customer.phone = customer.phone
-        shopify_customer.first_name = customer.first_name
-        shopify_customer.last_name = customer.last_name
-        shopify_customer.note = customer.note
-        shopify_customer.tags = customer.tags
+        # shopify_customer.phone = customer.phone
+        # shopify_customer.first_name = customer.first_name
+        # shopify_customer.last_name = customer.last_name
+        # shopify_customer.note = customer.note
+        # shopify_customer.tags = customer.tags
 
-        if shopify_customer.save():
+        try:
+            shopify_customer.save()
+        except Exception as e:
+            print(e)
+            return None
 
-            metafield_data = {
-                "namespace": "custom",
-                "key": "customer_",
-                "value": customer.customer_no
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
+        # if shopify_customer.save():
 
-            metafield_data = {
-                "namespace": "custom",
-                "key": "customer_type",
-                "value": customer.type
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
+        #     metafield_data = {
+        #         "namespace": "custom",
+        #         "key": "customer_",
+        #         "value": customer.customer_no
+        #     }
+        #     shopify_metafield = ShopifyMetafield(metafield_data)
+        #     shopify_customer.add_metafield(shopify_metafield)
 
-            metafield_data = {
-                "namespace": "custom",
-                "key": "trade_show_sales_representative",
-                "value": customer.comm
-            }
-            shopify_metafield = ShopifyMetafield(metafield_data)
-            shopify_customer.add_metafield(shopify_metafield)
+        #     metafield_data = {
+        #         "namespace": "custom",
+        #         "key": "customer_type",
+        #         "value": customer.type
+        #     }
+        #     shopify_metafield = ShopifyMetafield(metafield_data)
+        #     shopify_customer.add_metafield(shopify_metafield)
+
+        #     metafield_data = {
+        #         "namespace": "custom",
+        #         "key": "trade_show_sales_representative",
+        #         "value": customer.comm
+        #     }
+        #     shopify_metafield = ShopifyMetafield(metafield_data)
+        #     shopify_customer.add_metafield(shopify_metafield)
 
         return shopify_customer
 
@@ -873,7 +901,7 @@ def create_order(order, thread=None):
         # if order.customer.phone:
         #     shopify_order.phone = order.customer.phone
 
-        shopify_order.po_number = order.order_no
+        # shopify_order.po_number = order.order_no
 
         shopify_order.customer = {
             "id": order.customer.customer_id
@@ -974,6 +1002,8 @@ def create_company(company, thread=None):
     with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
         shopifyGraphQL = ShopifyGraphQL()
 
+        company_id = None
+
         try:
             mutation = """
                 mutation CompanyCreate($input: CompanyCreateInput!) {
@@ -981,6 +1011,11 @@ def create_company(company, thread=None):
                         company {
                             id
                             name
+                            locations (first: 1) {
+                                nodes {
+                                    id
+                                }
+                            }
                         }
                         userErrors {
                             field
@@ -999,29 +1034,29 @@ def create_company(company, thread=None):
                     "companyLocation": {
                         "name": company.location_name,
                         "note": company.location_note,
-                        # "phone": company.location_phone,
+                        "phone": company.location_phone,
                         "taxExemptions": [company.location_tax_exemption],
                         "shippingAddress": {
                             "firstName": company.shipping_first_name,
                             "lastName": company.shipping_last_name,
-                            # "phone": company.shipping_phone,
+                            "phone": company.shipping_phone,
                             "address1": company.shipping_address1,
                             "address2": company.shipping_address2,
                             "city": company.shipping_city,
                             "zoneCode": company.shipping_state,
-                            "zip": company.shipping_zip,
-                            "countryCode": company.shipping_country
+                            "zip": company.shipping_zip.replace(".", "-"),
+                            "countryCode": company.shipping_country or "US"
                         },
                         "billingAddress": {
                             "firstName": company.billing_first_name,
                             "lastName": company.billing_last_name,
-                            # "phone": company.billing_phone,
+                            "phone": company.billing_phone,
                             "address1": company.billing_address1,
                             "address2": company.billing_address2,
                             "city": company.billing_city,
                             "zoneCode": company.billing_state,
-                            "zip": company.billing_zip,
-                            "countryCode": company.billing_country
+                            "zip": company.billing_zip.replace(".", "-"),
+                            "countryCode": company.billing_country or "US"
                         },
                     }
                 }
@@ -1030,7 +1065,9 @@ def create_company(company, thread=None):
             response_data = json.loads(response)
 
             company_id = response_data['data']['companyCreate']['company']['id']
+            location_id = response_data['data']['companyCreate']['company']['locations']['nodes'][0]['id']
 
+            # Assign Contact
             mutation = """
                 mutation companyAssignCustomerAsContact($companyId: ID!, $customerId: ID!) {
                     companyAssignCustomerAsContact(companyId: $companyId, customerId: $customerId) {
@@ -1054,11 +1091,18 @@ def create_company(company, thread=None):
 
             contact_id = response_data['data']['companyAssignCustomerAsContact']['companyContact']['id']
 
+            ## Assign Main Contact
             mutation = """
                 mutation companyAssignMainContact($companyContactId: ID!, $companyId: ID!) {
                     companyAssignMainContact(companyContactId: $companyContactId, companyId: $companyId) {
                         company {
                             id
+                            contactRoles (first: 10) {
+                                nodes {
+                                    id
+                                    name
+                                }
+                            }
                         }
                         userErrors {
                             field
@@ -1075,11 +1119,78 @@ def create_company(company, thread=None):
             response = shopifyGraphQL.execute(mutation, variables=variables)
             response_data = json.loads(response)
 
+            contact_roles = response_data['data']['companyAssignMainContact']['company']['contactRoles']['nodes']
+            contact_role_id = None
+            for contact_role in contact_roles:
+                if contact_role['name'] == "Ordering only":
+                    contact_role_id = contact_role['id']
+
+            # Assign Role
+            mutation = """
+                mutation companyContactAssignRole($companyContactId: ID!, $companyContactRoleId: ID!, $companyLocationId: ID!) {
+                    companyContactAssignRole(companyContactId: $companyContactId, companyContactRoleId: $companyContactRoleId, companyLocationId: $companyLocationId) {
+                        companyContactRoleAssignment {
+                            id
+                        }
+                        userErrors {
+                            field
+                            message
+                        }
+                    }
+                }
+            """
+            variables = {
+                "companyContactId": contact_id,
+                "companyContactRoleId": contact_role_id,
+                "companyLocationId": location_id
+            }
+
+            response = shopifyGraphQL.execute(mutation, variables=variables)
+            response_data = json.loads(response)
+
             return company_id
 
         except Exception as e:
             print(e)
-            return None
+            return company_id
+
+
+def list_companies(cursor=None, thread=None):
+    processor = Processor(thread=thread)
+
+    with ShopifySession.temp(SHOPIFY_API_BASE_URL, SHOPIFY_API_VERSION, processor.api_token):
+        shopifyGraphQL = ShopifyGraphQL()
+
+        query = """
+            {
+                companies (first: 250) {
+                    nodes {
+                        id
+                    }
+                    pageInfo {
+                        endCursor
+                    }
+                }
+            }
+        """
+        if cursor:
+            query = f"""
+                {{
+                    companies (first: 250, after: "{cursor}") {{
+                        nodes {{
+                            id
+                        }}
+                        pageInfo {{
+                            endCursor
+                        }}
+                    }}
+                }}
+            """
+        response = shopifyGraphQL.execute(query)
+        response_data = json.loads(response)
+
+        return response_data['data']['companies']
+
 
 def delete_company(companyId, thread=None):
     processor = Processor(thread=thread)
