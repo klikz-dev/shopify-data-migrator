@@ -204,7 +204,7 @@ class Processor:
 
     def inventory(self):
 
-        products = Product.objects.all()
+        products = Product.objects.exclude(product_id=None)
         total = len(products)
 
         def sync_inventory(index, product):
