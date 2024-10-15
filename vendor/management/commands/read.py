@@ -184,7 +184,7 @@ class Processor:
         }
 
         rows = feed.readExcel(
-            file_path=f"{FILEDIR}/ecc-products-master.xlsx",
+            file_path=f"{FILEDIR}/ecc-product-master.xlsx",
             column_map=column_map,
             exclude=[]
         )
