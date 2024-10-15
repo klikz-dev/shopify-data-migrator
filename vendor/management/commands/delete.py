@@ -99,8 +99,9 @@ class Processor:
 
                 shopify_product_ids = []
                 for shopify_product in shopify_products:
-                    tags = shopify_product.tags
-                    if "custom-bundle" not in tags:
+                    # tags = shopify_product.tags
+                    # if "custom-bundle" not in tags:
+                    if True:
                         shopify_product_ids.append(shopify_product.id)
 
                 common.thread(rows=shopify_product_ids,
