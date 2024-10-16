@@ -78,34 +78,21 @@ class TagAdmin(admin.ModelAdmin):
 class SetpartAdmin(admin.ModelAdmin):
 
     fields = [
-        'sku',
         'order_code',
         'title',
         'parent_order_code',
-        # 'metal',
-        # 'diameter',
-        # 'circulation',
-        # 'assoc',
-        # 'price',
-        # 'obverse_detail',
-        # 'reverse_detail',
-        # 'info',
-        # 'country',
-        # 'unit_weight',
     ]
 
     list_display = [
-        'sku',
         'order_code',
-        'title',
         'parent_order_code',
+        'title',
     ]
 
     search_fields = [
-        'sku',
         'order_code',
-        'title',
         'parent_order_code',
+        'title',
     ]
 
 

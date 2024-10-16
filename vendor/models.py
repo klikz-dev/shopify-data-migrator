@@ -53,16 +53,14 @@ class Tag(models.Model):
 
 
 class Setpart(models.Model):
-    sku = models.CharField(max_length=200, primary_key=True)
-    order_code = models.CharField(
-        max_length=200, default=None, blank=True, null=True)
+    order_code = models.CharField(max_length=200, primary_key=True)
     title = models.CharField(
         max_length=200, default=None, blank=True, null=True)
     parent_order_code = models.CharField(
         max_length=200, default=None, blank=True, null=True)
 
     def __str__(self):
-        return self.sku
+        return self.order_code
 
 
 class Product(models.Model):

@@ -323,11 +323,10 @@ class Processor:
         # Get Set Parts Data
         column_map = {
             'parent_sku': 'parent_sku',
-
-            'sku': 'child_sku',
-            'order_code': 'order_code',
-            'title': 'title',
             'parent_order_code': 'parent_order_code',
+            'sku': 'child_sku',
+            'order_code': 'full_order_code',
+            'title': 'title',
         }
 
         rows = feed.readExcel(
@@ -337,20 +336,19 @@ class Processor:
         )
 
         for row in tqdm(rows):
-            parent_sku = common.to_text(row['parent_sku'])
+            parent_order_code = common.to_text(row['parent_order_code'])
             try:
                 product = Product.objects.get(
-                    sku=parent_sku)
+                    sku=parent_order_code)
             except Product.DoesNotExist:
                 # print(f"{parent_sku} Not found")
                 continue
 
             setpart, _ = Setpart.objects.get_or_create(
-                sku=common.to_text(row['sku']),
+                order_code=common.to_text(row['order_code']),
                 defaults={
-                    'order_code': common.to_text(row.get('order_code')),
-                    'title': common.to_text(row.get('title')),
                     'parent_order_code': common.to_text(row.get('parent_order_code')),
+                    'title': common.to_text(row.get('title')),
                 }
             )
 
