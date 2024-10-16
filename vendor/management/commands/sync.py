@@ -20,9 +20,6 @@ class Command(BaseCommand):
         if "product" in options['functions']:
             processor.product()
 
-        if "variant" in options['functions']:
-            processor.variant()
-
         if "customer" in options['functions']:
             processor.customer()
 
@@ -51,7 +48,7 @@ class Processor:
 
     def product(self):
 
-        products = Product.objects.all().exclude(type__name="Variable").filter(product_id=None)
+        products = Product.objects.filter(product_id=None)
         total = len(products)
 
         def sync_product(index, product):
@@ -75,33 +72,6 @@ class Processor:
         #     break
 
         common.thread(rows=products, function=sync_product)
-
-    def variant(self):
-
-        parent_skus = set(Product.objects.all().filter(
-            type__name="Variable").values_list('parent_sku', flat=True).distinct())
-        total = len(parent_skus)
-
-        for index, parent_sku in enumerate(parent_skus):
-            product = Product.objects.get(sku=parent_sku)
-
-            variants = Product.objects.filter(
-                parent_sku=parent_sku).filter(type__name="Variable").exclude(variable="")
-
-            shopify_product = shopify.create_variable_product(
-                product=product, variants=variants, thread=index)
-            shopify_variants = shopify_product.variants
-
-            if shopify_product.id:
-
-                for shopify_variant in shopify_variants:
-                    variant = variants.filter(
-                        sku=shopify_variant.sku).first()
-                    variant.product_id = shopify_product.id
-                    variant.variant_id = shopify_variant.id
-                    variant.save()
-
-            print(f"{index}/{total} -- Variant {parent_sku} Created")
 
     def image(self, product):
         images = product.images.all()

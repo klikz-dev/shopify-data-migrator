@@ -18,7 +18,6 @@ python3 ./manage.py read company
 
 # Sync
 python3 ./manage.py sync product
-python3 ./manage.py sync variant
 python3 ./manage.py sync customer
 python3 ./manage.py sync company
 python3 ./manage.py sync order
