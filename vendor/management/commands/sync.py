@@ -188,6 +188,9 @@ class Processor:
                 company.save()
                 print(f"{index}/{total} -- Company {company.company_name} Created")
 
+            else:
+                print(f"{index}/{total} -- Company {company.company_name} Failed")
+
         # for index, company in enumerate(companies):
         #     sync_company(index, company)
 

@@ -1063,86 +1063,87 @@ def create_company(company, thread=None):
             company_id = response_data['data']['companyCreate']['company']['id']
             location_id = response_data['data']['companyCreate']['company']['locations']['nodes'][0]['id']
 
-            # Assign Contact
-            mutation = """
-                mutation companyAssignCustomerAsContact($companyId: ID!, $customerId: ID!) {
-                    companyAssignCustomerAsContact(companyId: $companyId, customerId: $customerId) {
-                        companyContact {
-                            id
-                        }
-                        userErrors {
-                            field
-                            message
-                        }
-                    }
-                }
-            """
-            variables = {
-                "companyId": company_id,
-                "customerId": f"gid://shopify/Customer/{company.customer.customer_id}"
-            }
-
-            response = shopifyGraphQL.execute(mutation, variables=variables)
-            response_data = json.loads(response)
-
-            contact_id = response_data['data']['companyAssignCustomerAsContact']['companyContact']['id']
-
-            ## Assign Main Contact
-            mutation = """
-                mutation companyAssignMainContact($companyContactId: ID!, $companyId: ID!) {
-                    companyAssignMainContact(companyContactId: $companyContactId, companyId: $companyId) {
-                        company {
-                            id
-                            contactRoles (first: 10) {
-                                nodes {
-                                    id
-                                    name
-                                }
+            if company_id and location_id:
+                # Assign Contact
+                mutation = """
+                    mutation companyAssignCustomerAsContact($companyId: ID!, $customerId: ID!) {
+                        companyAssignCustomerAsContact(companyId: $companyId, customerId: $customerId) {
+                            companyContact {
+                                id
+                            }
+                            userErrors {
+                                field
+                                message
                             }
                         }
-                        userErrors {
-                            field
-                            message
+                    }
+                """
+                variables = {
+                    "companyId": company_id,
+                    "customerId": f"gid://shopify/Customer/{company.customer.customer_id}"
+                }
+
+                response = shopifyGraphQL.execute(mutation, variables=variables)
+                response_data = json.loads(response)
+
+                contact_id = response_data['data']['companyAssignCustomerAsContact']['companyContact']['id']
+
+                ## Assign Main Contact
+                mutation = """
+                    mutation companyAssignMainContact($companyContactId: ID!, $companyId: ID!) {
+                        companyAssignMainContact(companyContactId: $companyContactId, companyId: $companyId) {
+                            company {
+                                id
+                                contactRoles (first: 10) {
+                                    nodes {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                            userErrors {
+                                field
+                                message
+                            }
                         }
                     }
+                """
+                variables = {
+                    "companyId": company_id,
+                    "companyContactId": contact_id
                 }
-            """
-            variables = {
-                "companyId": company_id,
-                "companyContactId": contact_id
-            }
 
-            response = shopifyGraphQL.execute(mutation, variables=variables)
-            response_data = json.loads(response)
+                response = shopifyGraphQL.execute(mutation, variables=variables)
+                response_data = json.loads(response)
 
-            contact_roles = response_data['data']['companyAssignMainContact']['company']['contactRoles']['nodes']
-            contact_role_id = None
-            for contact_role in contact_roles:
-                if contact_role['name'] == "Ordering only":
-                    contact_role_id = contact_role['id']
+                contact_roles = response_data['data']['companyAssignMainContact']['company']['contactRoles']['nodes']
+                contact_role_id = None
+                for contact_role in contact_roles:
+                    if contact_role['name'] == "Ordering only":
+                        contact_role_id = contact_role['id']
 
-            # Assign Role
-            mutation = """
-                mutation companyContactAssignRole($companyContactId: ID!, $companyContactRoleId: ID!, $companyLocationId: ID!) {
-                    companyContactAssignRole(companyContactId: $companyContactId, companyContactRoleId: $companyContactRoleId, companyLocationId: $companyLocationId) {
-                        companyContactRoleAssignment {
-                            id
-                        }
-                        userErrors {
-                            field
-                            message
+                # Assign Role
+                mutation = """
+                    mutation companyContactAssignRole($companyContactId: ID!, $companyContactRoleId: ID!, $companyLocationId: ID!) {
+                        companyContactAssignRole(companyContactId: $companyContactId, companyContactRoleId: $companyContactRoleId, companyLocationId: $companyLocationId) {
+                            companyContactRoleAssignment {
+                                id
+                            }
+                            userErrors {
+                                field
+                                message
+                            }
                         }
                     }
+                """
+                variables = {
+                    "companyContactId": contact_id,
+                    "companyContactRoleId": contact_role_id,
+                    "companyLocationId": location_id
                 }
-            """
-            variables = {
-                "companyContactId": contact_id,
-                "companyContactRoleId": contact_role_id,
-                "companyLocationId": location_id
-            }
 
-            response = shopifyGraphQL.execute(mutation, variables=variables)
-            response_data = json.loads(response)
+                response = shopifyGraphQL.execute(mutation, variables=variables)
+                response_data = json.loads(response)
 
             return company_id
 
