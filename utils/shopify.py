@@ -116,7 +116,6 @@ class Processor:
         setparts = []
         for setpart in product.setparts.all():
             setparts.append({
-                'sku': setpart.sku,
                 'order_code': setpart.order_code,
                 'title': setpart.title,
                 'parent_order_code': setpart.parent_order_code,
@@ -157,9 +156,6 @@ class Processor:
         vendor = product.vendor.name
         product_type = product.type.name
         product_tags = self.generate_product_tags(product=product, custom_bundle=custom_bundle)
-
-        # if len(product.setparts.all()) > 0:
-        #     product_type = "Bundle"
 
         product_data = {
             "title": product.title.title(),
