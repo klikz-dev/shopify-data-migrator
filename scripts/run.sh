@@ -29,9 +29,9 @@ python3 ./manage.py sync product
 python3 ./manage.py sync customer
 
 python3 ./manage.py sync company # run without comments
-python3 ./manage.py sync company # run with commenting Phone
-python3 ./manage.py sync company # Run with commenting Zip, then Zone
+# python3 ./manage.py sync company # run with commenting Phone
+# python3 ./manage.py sync company # Run with commenting Zip, then Zone
 
-python3 ./manage.py sync order
-python3 ./manage.py sync order
-python3 ./manage.py sync order
+# python3 ./manage.py sync order
+# python3 ./manage.py sync order
+# python3 ./manage.py sync order
