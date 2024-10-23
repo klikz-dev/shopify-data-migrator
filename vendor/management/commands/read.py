@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from pathlib import Path
 from tqdm import tqdm
 
-from utils import common, feed, shopify
+from utils import common, feed
 
 from vendor.models import Product, Vendor, Type, Collection, Tag, Image, Setpart, Customer, Order, LineItem, Company
 
@@ -62,7 +62,8 @@ class Processor:
         details = {}
 
         column_map = {
-            'sku': 'StockID',
+            'number': 'NUMBER',
+            'circulation': 'circulation',
 
             'binrr': 'BINRR',
             'binother': 'BINOther',
@@ -90,7 +91,9 @@ class Processor:
         )
 
         for row in tqdm(rows):
-            sku = common.to_text(row['sku'])
+            number = common.to_text(row['number'])
+            circulation = common.to_text(row['circulation'])
+            sku = f"{number}{circulation}"
 
             binrr = common.to_text(row['binrr'])
             binother = common.to_text(row['binother'])
