@@ -1065,6 +1065,41 @@ def create_company(company, thread=None):
             response = shopifyGraphQL.execute(mutation, variables=variables)
             response_data = json.loads(response)
 
+            if 'errors' in response_data:
+                variables = {
+                    "input": {
+                        "company": {
+                            "name": company.company_name,
+                            "note": company.company_note,
+                        },
+                        "companyLocation": {
+                            "name": company.location_name,
+                            "note": company.location_note,
+                            "shippingAddress": {
+                                "firstName": company.shipping_first_name,
+                                "lastName": company.shipping_last_name,
+                                "address1": company.shipping_address1,
+                                "address2": company.shipping_address2,
+                                "city": company.shipping_city,
+                                "countryCode": company.shipping_country or "US"
+                            },
+                            "billingAddress": {
+                                "firstName": company.billing_first_name,
+                                "lastName": company.billing_last_name,
+                                "address1": company.billing_address1,
+                                "address2": company.billing_address2,
+                                "city": company.billing_city,
+                                "countryCode": company.billing_country or "US"
+                            },
+                        }
+                    }
+                }
+                response = shopifyGraphQL.execute(mutation, variables=variables)
+                response_data = json.loads(response)
+
+            if 'data' not in response_data:
+                return company_id
+
             company_id = response_data['data']['companyCreate']['company']['id']
             location_id = response_data['data']['companyCreate']['company']['locations']['nodes'][0]['id']
 
