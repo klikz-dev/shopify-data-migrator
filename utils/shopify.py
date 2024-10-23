@@ -899,9 +899,14 @@ def create_order(order, thread=None):
 
         # shopify_order.po_number = order.order_no
 
-        shopify_order.customer = {
-            "id": order.customer.customer_id
-        }
+        if order.customer.customer_id:
+            shopify_order.customer = {
+                "id": order.customer.customer_id
+            }
+        else:
+            shopify_order.customer = {
+                "email": order.customer.email
+            }
 
         line_items = []
         for item in order.lineItems.all():
