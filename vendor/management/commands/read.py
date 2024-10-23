@@ -472,7 +472,7 @@ class Processor:
             'order_total': 'Order Total',
             'terms': 'Terms',
             'terms_due_date': 'Terms Due Date',
-            'sku': 'SKU #',
+            'sku': 'Order Code',
             'order_code': 'Order Code',
             'discount': 'Discount',
             'quantity': 'Quantity',
