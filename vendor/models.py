@@ -230,6 +230,7 @@ class Customer(models.Model):
 
     note = models.TextField(
         max_length=2000, default=None, null=True, blank=True)
+    tax_exempt = models.BooleanField(default=False)
     tags = models.CharField(
         max_length=200, default=None, null=True, blank=True)
 
@@ -338,6 +339,8 @@ class Order(models.Model):
     shipping_method = models.CharField(
         max_length=200, default=None, null=True, blank=True)
     shipping_cost = models.FloatField(default=0, null=False, blank=False)
+    tax = models.FloatField(default=0, null=False, blank=False)
+    tax_rate = models.FloatField(default=0, null=False, blank=False)
     order_memo = models.CharField(
         max_length=200, default=None, null=True, blank=True)
     customer_no = models.CharField(

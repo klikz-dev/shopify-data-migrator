@@ -744,6 +744,7 @@ def create_customer(customer, thread=None):
                 }
             ],
             "note": customer.note,
+            "tax_exempt": customer.tax_exempt,
             "tags": customer.tags,
         }
 
@@ -933,6 +934,11 @@ def create_order(order, thread=None):
             "title": order.shipping_method,
             "code": order.shipping_method,
             "price": order.shipping_cost
+        }]
+
+        shopify_order.tax_lines = [{
+            "price": order.tax,
+            "rate": order.tax_rate
         }]
 
         shopify_order.total_price = order.order_total

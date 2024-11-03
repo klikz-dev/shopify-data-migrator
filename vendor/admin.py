@@ -299,6 +299,7 @@ class CustomerAdmin(admin.ModelAdmin):
     list_filter = [
         'customer_type',
         'country',
+        'tax_exempt',
         'tags'
     ]
 

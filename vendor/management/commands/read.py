@@ -374,6 +374,7 @@ class Processor:
             'zip': 'ZIPCODE',
             'country': 'COUNTRY',
             'note': 'COMMENT',
+            'tax_exempt': 'EXEMPT',
 
             'trade_show_sales_representative': 'chkComm',
             'payment_terms': 'DUE_DAYS',
@@ -415,6 +416,7 @@ class Processor:
             customer.phone = common.to_phone(
                 customer.country, common.to_text(row.get('phone')))
             customer.note = common.to_text(row.get('note'))
+            customer.tax_exempt = row.get('tax_exempt') == True
 
             customer.trade_show_sales_representative = row.get(
                 'trade_show_sales_representative') == True
@@ -486,6 +488,8 @@ class Processor:
             'approval': 'APPROVAL',
             'shipping_method': 'Shipping Method',
             'shipping_cost': 'Shipping cost',
+            'tax': 'Tax',
+            'tax_rate': 'Tax Rate',
             'order_memo': 'Order Memo',
             'customer_no': 'Customer Number',
             'customer_email': 'tblCust_email',
@@ -548,6 +552,8 @@ class Processor:
                     'approval': common.to_text(row.get('approval')),
                     'shipping_method': common.to_text(row.get('shipping_method')),
                     'shipping_cost': common.to_float(row.get('shipping_cost')),
+                    'tax': common.to_float(row.get('tax')),
+                    'tax_rate': common.to_float(row.get('tax_rate')),
                     'order_memo': common.to_text(row.get('order_memo')),
                     'customer_no': common.to_text(row.get('customer_no')),
                     'company': common.to_text(row.get('company')),
